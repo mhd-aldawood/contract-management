@@ -24,6 +24,10 @@ import SaveLifeLongUseCase from '@/domain/usecases/lifelong/SaveLifeLongUseCase'
 import LifeLongRemoteDataSource from '@/data/datasources/LifeLongRemoteDataSource';
 import LifeLongRepositoryImpl  from '@/data/repositories/LifeLongRepositoryImpl';
 
+import SaveOtherUseCase from '@/domain/usecases/other/SaveOtherUseCase';
+import OtherAgreementRemoteDataSource from '@/data/datasources/OtherAgreementRemoteDataSource';
+import OtherAgreementRepositoryImpl  from '@/data/repositories/OtherAgreementRepositoryImpl';
+
 
 
 // ---------- Data Sources ----------
@@ -33,6 +37,7 @@ const agreementLocalDataSource = new AgreementLocalDataSource();
 const educationalContentDataSource=new EducationalContentDataSource();
 const nafathCenterRemoteDataSource=new NafathCenterRemoteDataSource();
 const lifeLongRemoteDataSource=new LifeLongRemoteDataSource(); 
+const otherAgreementRemoteDataSource=new OtherAgreementRemoteDataSource();
 
 
 // ---------- Repositories ----------
@@ -45,6 +50,7 @@ const agreementRepository = new AgreementRepositoryImpl(agreementLocalDataSource
 const educationalContentRepository =new EducationalContentRepositoryImpl({localDataSource:educationalContentDataSource});
 const nafathCenterRepository=new NafathCenterRepositoryImpl({remoteDataSource:nafathCenterRemoteDataSource});
 const lifeLongRepository=new LifeLongRepositoryImpl({remoteDataSource:lifeLongRemoteDataSource});
+const otherAgreementRepository=new OtherAgreementRepositoryImpl({remoteDataSource:otherAgreementRemoteDataSource});
 
 
 
@@ -70,7 +76,10 @@ const container = {
   saveNafathCenterUseCase:new SaveNafathCenterUseCase({nafathCenterRepository}),
   
   //lifeLong
-  saveLifeLongUseCase:new SaveLifeLongUseCase({lifeLongRepository})
+  saveLifeLongUseCase:new SaveLifeLongUseCase({lifeLongRepository}),
+
+    //other
+  saveOtherUseCase:new SaveOtherUseCase({otherAgreementRepository}),
 
 };
 

@@ -38,6 +38,9 @@ export const API_URLS = {
     profile: `${API_BASE_URL}/api/users/profile`,
     settings: `${API_BASE_URL}/api/users/settings`,
   },
+    otherAgreement: {
+    create: `${API_BASE_URL}/api/other-agreement/create`,
+  },
 };
 
 export default API_URLS;

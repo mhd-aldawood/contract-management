@@ -51,7 +51,7 @@ export const NAV_ITEMS = [
         name: 'other-agreements',
         label: 'اتفاقيات أخرى',
         icon: '📄',
-        path: '/contracts/other',
+        path: '/contracts/other-agreements',
       },
        {
         name: 'educational-content',

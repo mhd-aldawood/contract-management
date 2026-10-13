@@ -73,6 +73,12 @@ const routes = [
   component: () => import('@/presentation/views/contracts/EducationalContentView.vue'),
   meta: { requiresAuth: true },
 },
+// Catch-all: prevents a blank white screen when a URL matches no route.
+{
+  path: '/:pathMatch(.*)*',
+  name: 'not-found',
+  component: () => import('@/presentation/views/NotFoundView.vue'),
+},
 ]
 
 const router = createRouter({
