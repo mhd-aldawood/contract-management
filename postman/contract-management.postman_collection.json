@@ -1,0 +1,272 @@
+{
+  "info": {
+    "_postman_id": "663e814e-7de0-4dc5-9b8b-d4103a962c4d",
+    "name": "Contract Management API",
+    "description": "API and Nginx gateway checks for Contract Management. Select the Local or Production Postman environment, then run Signup and Login first to populate the collection token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "value", "value": "Token {{token}}", "type": "string" },
+      { "key": "key", "value": "Authorization", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://cmapi.localhost:81" },
+    { "key": "dashboard_url", "value": "http://cm.localhost:81" },
+    { "key": "username", "value": "postman_user" },
+    { "key": "email", "value": "postman@example.com" },
+    { "key": "password", "value": "PostmanTest123!" },
+    { "key": "token", "value": "" },
+    { "key": "educational_content_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Nginx service checks",
+      "item": [
+        {
+          "name": "API gateway health",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/healthz",
+            "description": "Checks the API hostname through the Nginx gateway."
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Gateway is healthy', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "Dashboard gateway health",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{dashboard_url}}/health",
+            "description": "Checks the dashboard hostname through the Nginx gateway."
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Dashboard is healthy', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "Dashboard home through Nginx",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{dashboard_url}}/",
+            "description": "Confirms the dashboard hostname is routed to Vue."
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Dashboard is reachable', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "Django admin through Nginx",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/admin/login/",
+            "description": "Confirms the API hostname is routed to Django."
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Django admin is reachable', () => pm.response.to.have.status(200));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Signup",
+          "auth": { "type": "noauth" },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const suffix = Date.now();",
+                  "pm.collectionVariables.set('username', `postman_user_${suffix}`);",
+                  "pm.collectionVariables.set('email', `postman_${suffix}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User created', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json();",
+                  "if (data.data?.token) pm.collectionVariables.set('token', data.data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password2\": \"{{password}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/signup/"
+          }
+        },
+        {
+          "name": "Login",
+          "auth": { "type": "noauth" },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
+                "const data = pm.response.json();",
+                "if (data.data?.token) pm.collectionVariables.set('token', data.data.token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/login/"
+          }
+        },
+        {
+          "name": "Current user",
+          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/auth/me/" }
+        },
+        {
+          "name": "Refresh token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Token rotated', () => pm.response.to.have.status(200));",
+                "const data = pm.response.json();",
+                "if (data.data?.key) pm.collectionVariables.set('token', data.data.key);"
+              ]
+            }
+          }],
+          "request": { "method": "POST", "header": [], "url": "{{base_url}}/api/auth/token/refresh/" }
+        }
+      ]
+    },
+    {
+      "name": "Educational content",
+      "item": [
+        {
+          "name": "List educational content",
+          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/educational-contents" }
+        },
+        {
+          "name": "Create educational content",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Content created', () => pm.response.to.have.status(201));",
+                "const data = pm.response.json();",
+                "if (data.data?.id) pm.collectionVariables.set('educational_content_id', data.data.id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"educational-content\",\n  \"agreementNumber\": \"EDU-POSTMAN-001\",\n  \"name\": \"Postman educational agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"1000.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"1000.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"quarterlyDue\": \"250.00\",\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"contractText\": \"Created from Postman\",\n  \"isHidden\": false\n}"
+            },
+            "url": "{{base_url}}/api/educational-contents"
+          }
+        },
+        {
+          "name": "Get educational content",
+          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/educational-contents/{{educational_content_id}}/" }
+        },
+        {
+          "name": "Update educational content",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"updated-from-postman\"\n}" },
+            "url": "{{base_url}}/api/educational-contents/{{educational_content_id}}/"
+          }
+        },
+        {
+          "name": "Delete educational content",
+          "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/api/educational-contents/{{educational_content_id}}/" }
+        }
+      ]
+    },
+    {
+      "name": "Agreements",
+      "item": [
+        {
+          "name": "Create Nafath center agreement",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"nafath-center\",\n  \"agreementNumber\": \"NAFATH-POSTMAN-001\",\n  \"name\": \"Postman Nafath agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"500.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"500.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}"
+            },
+            "url": "{{base_url}}/api/nafath-center/create"
+          }
+        },
+        {
+          "name": "List Nafath center agreements",
+          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/nafath-center/" }
+        },
+        {
+          "name": "Create lifelong agreement",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"life-long\",\n  \"agreementNumber\": \"LIFE-POSTMAN-001\",\n  \"companyName\": \"Example Company\",\n  \"agreementName\": \"Postman lifelong agreement\",\n  \"subject\": \"API test\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"text\",\n  \"paymentText\": \"One payment\",\n  \"paymentSchedule\": [],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}"
+            },
+            "url": "{{base_url}}/api/life-long/create"
+          }
+        },
+        {
+          "name": "Create other agreement",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"other-agreements\",\n  \"agreementNumber\": \"OTHER-POSTMAN-001\",\n  \"name\": \"Postman other agreement\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"isHidden\": false,\n  \"rows\": [{\"header\": \"Term\", \"body\": \"Created from Postman\"}]\n}"
+            },
+            "url": "{{base_url}}/api/other-agreement/create"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Session cleanup",
+      "description": "Run this folder last because logout invalidates the token used by protected requests.",
+      "item": [
+        {
+          "name": "Logout",
+          "request": { "method": "POST", "header": [], "url": "{{base_url}}/api/auth/logout/" }
+        }
+      ]
+    }
+  ]
+}

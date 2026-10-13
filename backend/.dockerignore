@@ -1,0 +1,44 @@
+.git
+.gitignore
+.gitlab-ci.yml
+.dockerignore
+Dockerfile
+docker-compose.yml
+nginx.conf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Static/media (built in container)
+staticfiles/
+media/
+*.sqlite3
+db.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+
+logs/
+data/
+command.txt
+test.py

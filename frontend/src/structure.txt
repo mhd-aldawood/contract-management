@@ -1,0 +1,55 @@
+Folder PATH listing
+Volume serial number is 0000006B 9064:246E
+C:.
+¦   App.vue
+¦   main.js
+¦   structure.txt
+¦   style.css
+¦   
++---assets
+¦   ¦   hero.png
+¦   ¦   vite.svg
+¦   ¦   vue.svg
+¦   ¦   
+¦   +---styles
+¦           main.css
+¦           
++---components
+¦       HelloWorld.vue
+¦       
++---data
+¦   +---datasources
+¦   ¦       AuthLocalDataSource.js
+¦   ¦       
+¦   +---repositories
+¦           AuthRepositoryImpl.js
+¦           
++---di
+¦       container.js
+¦       
++---domain
+¦   +---entities
+¦   ¦       User.js
+¦   ¦       
+¦   +---repositories
+¦   ¦       AuthRepository.js
+¦   ¦       
+¦   +---usecases
+¦           LoginUseCase.js
+¦           SignupUseCase.js
+¦           
++---presentation
+    +---components
+    ¦       AppToolbar.vue
+    ¦       
+    +---router
+    ¦       index.js
+    ¦       
+    +---views
+            AboutView.vue
+            HomeView.vue
+            LoginView.vue
+            ProfileView.vue
+            SettingsView.vue
+            SignupView.vue
+            
