@@ -1,0 +1,1 @@
+import{a as e,b as t,h as n,p as r}from"./index-BrJJxOh3.js";var i={},a={class:`page`};function o(e,i){return t(),n(`div`,a,[...i[0]||=[r(`h1`,null,`📝 اتفاقية مذكرة تفاهم`,-1),r(`p`,null,`هنا محتوى اتفاقية مذكرة التفاهم...`,-1)]])}var s=e(i,[[`render`,o],[`__scopeId`,`data-v-ae6fa014`]]);export{s as default};

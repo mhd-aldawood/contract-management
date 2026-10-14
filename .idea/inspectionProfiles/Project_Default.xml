@@ -1,0 +1,20 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="Django" />
+          <option value="joblib" />
+          <option value="matminer" />
+          <option value="mp_api" />
+          <option value="numpy" />
+          <option value="pandas" />
+          <option value="pymatgen" />
+          <option value="pymatgen_core" />
+          <option value="pymatgen_io_validation" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

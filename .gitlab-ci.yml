@@ -1,0 +1,220 @@
+# ============================================================
+# GitLab CI/CD pipeline for the Contract Management platform
+# ------------------------------------------------------------
+# Stack:
+#   - backend : Django 6.1 + DRF + Gunicorn (Python 3.14)
+#   - frontend: Vue 3 + Vite (Node 20)
+#   - runtime : Docker Compose (postgres + pgadmin + backend
+#               + frontend + nginx reverse proxy)
+#
+# Pipeline stages:
+#   lint -> test -> build -> deploy
+#
+# Required CI/CD variables (Settings > CI/CD > Variables):
+#   CI_REGISTRY_USER / CI_REGISTRY_PASSWORD  (provided by GitLab)
+#   DEPLOY_HOST          e.g. cm-dev.svuonline.edu.sy
+#   DEPLOY_USER          SSH user on the deploy host
+#   SSH_PRIVATE_KEY      masked, protected - SSH key for deploy
+#   DEPLOY_PATH          e.g. /srv/contract-management
+#   Production secrets are stored on the server in .env / .env.production
+#   (see .env.example / .env.production.example).
+# ============================================================
+
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+# ------------------------------------------------------------
+# Global defaults
+# ------------------------------------------------------------
+variables:
+  # Docker-in-Docker
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_DRIVER: overlay2
+  # Where images are published in the GitLab Container Registry
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  # Django settings used by tests
+  DJANGO_SETTINGS_MODULE: contract_management_BE.settings
+  USE_SQLITE_FOR_TESTS: "True"
+  SQLITE_TEST_PATH: /tmp/contract-management-test.sqlite3
+  API_DEFAULT_LANGUAGE: ar
+  SECRET_KEY: ci-only-insecure-secret-key
+  DEBUG: "False"
+
+# Cache pip / npm between jobs
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - backend/.cache/pip/
+    - frontend/node_modules/
+
+# ============================================================
+# LINT
+# ============================================================
+backend:lint:
+  stage: lint
+  image: python:3.14-slim
+  before_script:
+    - cd backend
+    - pip install --no-cache-dir --upgrade pip
+    - pip install --no-cache-dir -r requirements.txt
+    - pip install --no-cache-dir ruff
+  script:
+    - echo "===> Ruff lint"
+    - ruff check . || true
+    - echo "===> Django system check"
+    - python manage.py check --deploy || true
+  allow_failure: true
+
+frontend:lint:
+  stage: lint
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - echo "===> Build check (Vite)"
+    - npm run build
+  artifacts:
+    name: "frontend-dist-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
+
+# ============================================================
+# TEST
+# ============================================================
+backend:test:
+  stage: test
+  image: python:3.14-slim
+  before_script:
+    - cd backend
+    - pip install --no-cache-dir --upgrade pip
+    - pip install --no-cache-dir -r requirements.txt
+  script:
+    - echo "===> Running Django tests (SQLite)"
+    - python manage.py test --verbosity 2
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+  artifacts:
+    when: always
+    reports:
+      junit: backend/test-results.xml
+    expire_in: 1 week
+
+frontend:test:
+  stage: test
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - echo "===> Frontend tests (placeholder - add vitest if configured)"
+    - if [ -f package.json ] && grep -q '"test"' package.json; then npm test; else echo "No test script defined; skipping."; fi
+  allow_failure: true
+
+# ============================================================
+# BUILD  (Docker images pushed to the GitLab Container Registry)
+# ============================================================
+build:backend:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - echo "===> Building backend image"
+    - docker build
+        --pull
+        -t "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+        -t "$BACKEND_IMAGE:latest"
+        ./backend
+    - echo "===> Pushing backend image"
+    - docker push "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$BACKEND_IMAGE:latest"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+build:frontend:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - echo "===> Building frontend image"
+    - docker build
+        --pull
+        --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL:-https://cmapi-dev.svuonline.edu.sy}"
+        -t "$FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+        -t "$FRONTEND_IMAGE:latest"
+        ./frontend
+    - echo "===> Pushing frontend image"
+    - docker push "$FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$FRONTEND_IMAGE:latest"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# ============================================================
+# DEPLOY
+# ============================================================
+.deploy_template: &deploy_definition
+  stage: deploy
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache openssh-client rsync
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+  script:
+    - echo "===> Syncing compose/nginx config to $DEPLOY_HOST:$DEPLOY_PATH"
+    - rsync -avz --delete
+        --exclude '.git'
+        --exclude 'node_modules'
+        --exclude 'frontend/dist'
+        --exclude '__pycache__'
+        docker-compose.yml nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+    - echo "===> Pulling new images and restarting stack"
+    - |
+      ssh "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<EOF
+        set -e
+        cd "$DEPLOY_PATH"
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+        export BACKEND_IMAGE="$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+        export FRONTEND_IMAGE="$FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+        docker compose pull || true
+        docker compose up -d --remove-orphans
+        docker image prune -f
+      EOF
+  environment:
+    name: production
+    url: https://cm-dev.svuonline.edu.sy
+
+# Deploy on main/master -> production host
+deploy:production:
+  <<: *deploy_definition
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+# Optional manual deploy for other branches -> staging host
+deploy:staging:
+  <<: *deploy_definition
+  variables:
+    DEPLOY_HOST: $STAGING_DEPLOY_HOST
+    DEPLOY_PATH: $STAGING_DEPLOY_PATH
+  environment:
+    name: staging
+    url: https://cmapi-dev.svuonline.edu.sy
+  rules:
+    - if: '$CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "master"'
+      when: manual
+  allow_failure: true
