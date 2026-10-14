@@ -225,8 +225,6 @@ Replace every `CHANGE_ME...` value.
 Required domain settings:
 
 ```dotenv
-BIND_ADDRESS=127.0.0.1
-APP_PORT=81
 DEBUG=False
 
 ALLOWED_HOSTS=cm-dev.svuonline.edu.sy,cmapi-dev.svuonline.edu.sy,localhost,127.0.0.1
@@ -324,8 +322,8 @@ At the TLS edge, DevOps should also configure:
 - Public firewall access only to ports `80` and `443`.
 
 Port `81` remains loopback-only. If the DevOps Nginx runs on a different host,
-bind `APP_PORT` to the server's private interface instead and restrict that port
-to the proxy server at the firewall.
+change the gateway's host IP in `docker-compose.yml` to the server's private
+interface and restrict that port to the proxy server at the firewall.
 
 ### 4. Verify production
 
@@ -397,12 +395,6 @@ errors.
 
 | Variable | Purpose |
 | --- | --- |
-| `BIND_ADDRESS` | Address used for published Docker ports |
-| `APP_PORT` | Host port mapped to application gateway port `81` |
-| `BACKEND_PORT` | Loopback Django diagnostic port |
-| `FRONTEND_PORT` | Loopback Vue diagnostic port |
-| `POSTGRES_EXPOSED_PORT` | Loopback PostgreSQL diagnostic port |
-| `PGADMIN_PORT` | Loopback pgAdmin port |
 | `SECRET_KEY` | Django cryptographic secret |
 | `DEBUG` | Must be `False` in production |
 | `ALLOWED_HOSTS` | Comma-separated public hosts accepted by Django |
@@ -411,7 +403,7 @@ errors.
 | `CORS_ALLOW_CREDENTIALS` | Whether cross-origin cookies are allowed; normally `False` |
 | `API_DEFAULT_LANGUAGE` | Fallback API language: `ar` or `en` |
 | `VITE_API_BASE_URL` | API origin without `/api` or trailing slash |
-| `POSTGRES_*` | PostgreSQL connection and credentials |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` | PostgreSQL connection and credentials |
 | `GUNICORN_WORKERS` | Gunicorn worker count |
 | `GUNICORN_TIMEOUT` | Gunicorn timeout in seconds |
 
@@ -478,7 +470,7 @@ docker compose ps
 docker compose logs --tail=200 nginx backend frontend
 ```
 
-Confirm the proxy target and `APP_PORT` are identical.
+Confirm the proxy target matches the gateway mapping in `docker-compose.yml`.
 
 ### Django `DisallowedHost`
 

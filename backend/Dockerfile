@@ -34,12 +34,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /root/.local /root/.local
 COPY . .
 
-RUN mkdir -p /app/staticfiles /app/media /app/logs
+RUN mkdir -p /app/staticfiles /app/media /app/logs \
+    && sed -i 's/\r$//' /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
 
 RUN python manage.py collectstatic --noinput
-
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
