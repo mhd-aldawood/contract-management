@@ -27,7 +27,8 @@ project's operating model:
 - CORS and preflight handling remain exclusively in Django.
 - Credentialed CORS is disabled because the frontend uses token authentication,
   not cross-origin cookies.
-- Docker-published ports bind to loopback by default.
+- Docker-published ports use Compose's default host-interface binding, matching
+  the school project; the production firewall controls external access.
 - The gateway preserves the original HTTPS scheme, public host, client IP, and
   forwarding chain from the DevOps proxy.
 
@@ -48,7 +49,7 @@ project's operating model:
 - API response, authentication, validation, upload, and renderer tests.
 - PostgreSQL, media, static, and log persistence through Docker volumes.
 - Health checks for the backend, frontend, PostgreSQL, and gateway.
-- Loopback-only published Docker ports.
+- Fixed Docker-published ports matching the documented service addresses.
 - One Nginx gateway listening on container port `81`.
 - Forwarded HTTPS/host preservation for operation behind the DevOps proxy.
 - Security headers applied once at the application gateway.
@@ -176,7 +177,8 @@ Default local addresses:
 | pgAdmin | `http://localhost:5050` |
 | PostgreSQL | `localhost:5432` |
 
-Published ports bind to `127.0.0.1` by default.
+Published ports use Compose's default all-interface binding. Restrict production
+access with the host firewall.
 
 For a browser test that mirrors the two production subdomains, use:
 
@@ -321,9 +323,9 @@ At the TLS edge, DevOps should also configure:
 - `Strict-Transport-Security` after HTTPS verification.
 - Public firewall access only to ports `80` and `443`.
 
-Port `81` remains loopback-only. If the DevOps Nginx runs on a different host,
-change the gateway's host IP in `docker-compose.yml` to the server's private
-interface and restrict that port to the proxy server at the firewall.
+Port `81` is published on the server interfaces, matching the school project.
+Restrict it to the native DevOps Nginx host with the server firewall; do not
+allow public access to application ports.
 
 ### 4. Verify production
 
@@ -511,7 +513,7 @@ limit. The current project limit is `20 MB`.
 - Use separate strong secrets for Django, PostgreSQL, and pgAdmin.
 - Keep `DEBUG=False`.
 - Expose only ports `80` and `443` publicly.
-- Keep application ports bound to loopback/private interfaces.
+- Restrict application ports to loopback/private networks with the host firewall.
 - Do not expose pgAdmin publicly; use an SSH tunnel when required.
 - Monitor certificate renewal and container health.
 - Back up PostgreSQL and uploaded media.
