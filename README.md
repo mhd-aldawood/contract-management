@@ -268,6 +268,39 @@ docker compose ps
 The backend startup performs the Django system check, migrations, and static
 collection before starting Gunicorn.
 
+### GitLab CI/CD
+
+The `master` branch pipeline uses the same `validate`, `preflight`, and `deploy`
+stages as the school-management pipeline. It builds and pushes only images whose
+source changed:
+
+- `backend/**` builds and deploys only `cm_backend`.
+- `frontend/**` builds and deploys only `cm_frontend`.
+- `nginx/**` recreates only `cm_nginx`.
+- `docker-compose.yml` performs a controlled full Compose update.
+
+After a frontend or backend container is replaced, the pipeline restarts
+`cm_nginx` so it resolves the new Docker container address. It does not recreate
+PostgreSQL, pgAdmin, or the unaffected application container. Docker Compose
+remains the source of truth for service names, build contexts, and containers.
+Harbor uses one repository, `svu-cm-dev/contract-management`, with separate
+`backend-<commit>` and `frontend-<commit>` tags. These deployment artifacts are
+tagged to the local image names derived from the Compose project; registry
+details are not added to the Compose file. All pipeline and remote deployment logic is contained in
+`.gitlab-ci.yml`; there is no second CI deployment script to configure.
+
+Configure these protected and masked GitLab CI/CD variables:
+
+```text
+REGISTRY_PASSWORD
+SSH_PRIVATE_KEY_B64
+```
+
+The deployment server must already contain `/home/deployer/contract-fe/.env`.
+The pipeline never copies production secrets from the repository.
+`VITE_API_BASE_URL` is supplied during the frontend image build and defaults to
+`https://cmapi-dev.svuonline.edu.sy` in the pipeline.
+
 Verify the application gateway:
 
 ```bash

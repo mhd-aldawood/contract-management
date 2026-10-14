@@ -1,0 +1,299 @@
+stages:
+  - validate
+  - preflight
+  - deploy
+
+variables:
+  REGISTRY: "svu-cr.svuonline.org"
+  REGISTRY_USER: "svucr"
+  IMAGE_NAME: "$REGISTRY/svu-cm-dev/contract-management"
+  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+  VITE_API_BASE_URL: "https://cmapi-dev.svuonline.edu.sy"
+
+  SERVER_USER: "deployer"
+  SERVER_HOST: "10.1.19.32"
+  SERVER_PORT: "2222"
+  DEPLOY_DIR: "/home/deployer/contract-management"
+
+  GIT_STRATEGY: fetch
+  GIT_DEPTH: "20"
+
+.docker_job: &docker_job
+  tags:
+    - shell-runner
+  before_script:
+    - 'command -v docker || (echo "docker is not installed on the runner" && exit 1)'
+
+.registry_job: &registry_job
+  <<: *docker_job
+  before_script:
+    - 'command -v docker || (echo "docker is not installed on the runner" && exit 1)'
+    - 'test -n "$REGISTRY_PASSWORD" || (echo "Missing CI/CD variable REGISTRY_PASSWORD" && exit 1)'
+    - echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY" --username "$REGISTRY_USER" --password-stdin
+
+pipeline-check:
+  stage: validate
+  tags:
+    - shell-runner
+  rules:
+    - when: always
+  script:
+    - echo "Pipeline created for $CI_COMMIT_BRANCH at $CI_COMMIT_SHA"
+
+validate-compose:
+  <<: *docker_job
+  stage: validate
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - docker-compose.yml
+        - nginx/**/*
+  script:
+    - COMPOSE_ENV_FILE=.env.production.example docker compose --env-file .env.production.example config --quiet
+
+build-backend:
+  <<: *registry_job
+  stage: preflight
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - backend/**/*
+        - docker-compose.yml
+  script:
+    - echo "Building backend $IMAGE_NAME:backend-$IMAGE_TAG"
+    - |
+      export COMPOSE_ENV_FILE="$CI_PROJECT_DIR/.env.production.example"
+      compose_project="cm-ci-$CI_PIPELINE_ID"
+      docker compose \
+        --project-name "$compose_project" \
+        --env-file .env.production.example \
+        build --pull backend
+      docker tag "${compose_project}-backend:latest" "$IMAGE_NAME:backend-$IMAGE_TAG"
+      docker tag "${compose_project}-backend:latest" "$IMAGE_NAME:backend-latest"
+    - docker push "$IMAGE_NAME:backend-$IMAGE_TAG"
+    - docker push "$IMAGE_NAME:backend-latest"
+
+build-frontend:
+  <<: *registry_job
+  stage: preflight
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - frontend/**/*
+        - docker-compose.yml
+  script:
+    - echo "Building frontend $IMAGE_NAME:frontend-$IMAGE_TAG with API $VITE_API_BASE_URL"
+    - |
+      export COMPOSE_ENV_FILE="$CI_PROJECT_DIR/.env.production.example"
+      compose_project="cm-ci-$CI_PIPELINE_ID"
+      docker compose \
+        --project-name "$compose_project" \
+        --env-file .env.production.example \
+        build --pull frontend
+      docker tag "${compose_project}-frontend:latest" "$IMAGE_NAME:frontend-$IMAGE_TAG"
+      docker tag "${compose_project}-frontend:latest" "$IMAGE_NAME:frontend-latest"
+    - docker push "$IMAGE_NAME:frontend-$IMAGE_TAG"
+    - docker push "$IMAGE_NAME:frontend-latest"
+
+deploy-development:
+  stage: deploy
+  tags:
+    - shell-runner
+  resource_group: contract-management-development
+  environment:
+    name: development
+    url: https://cm-dev.svuonline.edu.sy
+  needs:
+    - job: build-backend
+      optional: true
+    - job: build-frontend
+      optional: true
+    - job: validate-compose
+      optional: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - backend/**/*
+        - frontend/**/*
+        - nginx/**/*
+        - docker-compose.yml
+  before_script:
+    - 'command -v ssh || (echo "ssh is not installed on the runner" && exit 1)'
+    - 'command -v scp || (echo "scp is not installed on the runner" && exit 1)'
+    - 'test -n "$SSH_PRIVATE_KEY_B64" || (echo "Missing CI/CD variable SSH_PRIVATE_KEY_B64" && exit 1)'
+    - 'test -n "$REGISTRY_PASSWORD" || (echo "Missing CI/CD variable REGISTRY_PASSWORD" && exit 1)'
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
+    - ssh-keyscan -p "$SERVER_PORT" -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+  script:
+    - |
+      set -euo pipefail
+
+      ssh_key="${HOME}/.ssh/deploy_key"
+      ssh_target="${SERVER_USER}@${SERVER_HOST}"
+      ssh_options=(-p "$SERVER_PORT" -i "$ssh_key" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+      scp_options=(-P "$SERVER_PORT" -i "$ssh_key" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+
+      before_sha="${CI_COMMIT_BEFORE_SHA:-0000000000000000000000000000000000000000}"
+      deploy_backend=false
+      deploy_frontend=false
+      deploy_nginx=false
+      deploy_full=false
+
+      if test "$before_sha" = "0000000000000000000000000000000000000000" || ! git cat-file -e "${before_sha}^{commit}" 2>/dev/null; then
+        deploy_full=true
+        deploy_backend=true
+        deploy_frontend=true
+        deploy_nginx=true
+        changed_files="initial pipeline or unavailable previous commit"
+      else
+        changed_files="$(git diff --name-only "$before_sha" "$CI_COMMIT_SHA")"
+
+        if printf '%s\n' "$changed_files" | grep -q '^backend/'; then
+          deploy_backend=true
+        fi
+        if printf '%s\n' "$changed_files" | grep -q '^frontend/'; then
+          deploy_frontend=true
+        fi
+        if printf '%s\n' "$changed_files" | grep -q '^nginx/'; then
+          deploy_nginx=true
+        fi
+        if printf '%s\n' "$changed_files" | grep -q '^docker-compose\.yml$'; then
+          deploy_full=true
+          deploy_backend=true
+          deploy_frontend=true
+          deploy_nginx=true
+        fi
+      fi
+
+      echo "Changed files:"
+      printf '%s\n' "$changed_files"
+      echo "Deployment selection: backend=$deploy_backend frontend=$deploy_frontend nginx=$deploy_nginx full=$deploy_full"
+
+      ssh "${ssh_options[@]}" "$ssh_target" "mkdir -p '$DEPLOY_DIR/nginx' && test -f '$DEPLOY_DIR/.env'"
+      scp "${scp_options[@]}" docker-compose.yml "$ssh_target:$DEPLOY_DIR/docker-compose.yml"
+      scp "${scp_options[@]}" nginx/nginx.conf "$ssh_target:$DEPLOY_DIR/nginx/nginx.conf"
+
+      if test "$deploy_backend" = true || test "$deploy_frontend" = true; then
+        printf '%s' "$REGISTRY_PASSWORD" | ssh "${ssh_options[@]}" "$ssh_target" \
+          "docker login '$REGISTRY' --username '$REGISTRY_USER' --password-stdin"
+      fi
+
+      ssh "${ssh_options[@]}" "$ssh_target" bash -s -- \
+        "$DEPLOY_DIR" \
+        "$deploy_backend" \
+        "$deploy_frontend" \
+        "$deploy_nginx" \
+        "$deploy_full" \
+        "$IMAGE_NAME" \
+        "$IMAGE_TAG" <<'REMOTE_SCRIPT'
+      set -euo pipefail
+
+      deploy_dir="$1"
+      deploy_backend="$2"
+      deploy_frontend="$3"
+      deploy_nginx="$4"
+      deploy_full="$5"
+      image_name="$6"
+      image_tag="$7"
+
+      cd "$deploy_dir"
+      test -f .env || {
+        echo "Missing server environment file: $deploy_dir/.env"
+        exit 1
+      }
+
+      export COMPOSE_ENV_FILE="$deploy_dir/.env"
+      compose=(docker compose --env-file "$deploy_dir/.env")
+
+      project_name="$("${compose[@]}" config --format json | sed -n 's/^[[:space:]]*"name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+      test -n "$project_name" || {
+        echo "Could not determine the Docker Compose project name"
+        exit 1
+      }
+      backend_compose_image="${project_name}-backend:latest"
+      frontend_compose_image="${project_name}-frontend:latest"
+
+      prepare_backend_image() {
+        docker pull "${image_name}:backend-${image_tag}"
+        docker tag "${image_name}:backend-${image_tag}" "$backend_compose_image"
+      }
+
+      prepare_frontend_image() {
+        docker pull "${image_name}:frontend-${image_tag}"
+        docker tag "${image_name}:frontend-${image_tag}" "$frontend_compose_image"
+      }
+
+      wait_for_service() {
+        service="$1"
+        attempt=1
+        while test "$attempt" -le 30; do
+          container_id="$("${compose[@]}" ps -q "$service")"
+          if test -n "$container_id"; then
+            state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_id")"
+            case "$state" in
+              healthy|running)
+                echo "$service is $state"
+                return 0
+                ;;
+              unhealthy|exited|dead)
+                echo "$service is $state"
+                "${compose[@]}" logs --tail=100 "$service" || true
+                return 1
+                ;;
+            esac
+          else
+            state=missing
+          fi
+          echo "Waiting for $service ($attempt/30, state=$state)"
+          sleep 5
+          attempt=$((attempt + 1))
+        done
+
+        echo "$service did not become healthy"
+        "${compose[@]}" logs --tail=100 "$service" || true
+        return 1
+      }
+
+      if test "$deploy_full" = true; then
+        prepare_backend_image
+        prepare_frontend_image
+        "${compose[@]}" pull postgres pgadmin nginx
+        "${compose[@]}" up -d --no-build --remove-orphans
+        wait_for_service backend
+        wait_for_service frontend
+        wait_for_service nginx
+      else
+        changed_app=false
+
+        if test "$deploy_backend" = true; then
+          prepare_backend_image
+          "${compose[@]}" up -d --no-build --no-deps --force-recreate backend
+          wait_for_service backend
+          changed_app=true
+        fi
+
+        if test "$deploy_frontend" = true; then
+          prepare_frontend_image
+          "${compose[@]}" up -d --no-build --no-deps --force-recreate frontend
+          wait_for_service frontend
+          changed_app=true
+        fi
+
+        if test "$deploy_nginx" = true; then
+          "${compose[@]}" up -d --no-deps --force-recreate nginx
+          wait_for_service nginx
+        elif test "$changed_app" = true; then
+          "${compose[@]}" restart nginx
+          wait_for_service nginx
+        fi
+      fi
+
+      "${compose[@]}" ps
+      REMOTE_SCRIPT
+
+      echo "Deployment completed for $CI_COMMIT_SHA"
+  after_script:
+    - rm -f ~/.ssh/deploy_key
