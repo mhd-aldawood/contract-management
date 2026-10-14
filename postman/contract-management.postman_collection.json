@@ -14,8 +14,10 @@
     ]
   },
   "variable": [
-    { "key": "base_url", "value": "http://cmapi.localhost:81" },
-    { "key": "dashboard_url", "value": "http://cm.localhost:81" },
+    { "key": "baseUrl", "value": "http://cmapi.localhost:81" },
+    { "key": "dashboardUrl", "value": "http://cm.localhost:81" },
+    { "key": "localBaseUrl", "value": "http://cmapi.localhost:81" },
+    { "key": "productionBaseUrl", "value": "https://cmapi-dev.svuonline.edu.sy" },
     { "key": "username", "value": "postman_user" },
     { "key": "email", "value": "postman@example.com" },
     { "key": "password", "value": "PostmanTest123!" },
@@ -32,7 +34,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/healthz",
+            "url": "{{baseUrl}}/healthz",
             "description": "Checks the API hostname through the Nginx gateway."
           },
           "event": [{
@@ -46,7 +48,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{dashboard_url}}/health",
+            "url": "{{dashboardUrl}}/health",
             "description": "Checks the dashboard hostname through the Nginx gateway."
           },
           "event": [{
@@ -60,7 +62,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{dashboard_url}}/",
+            "url": "{{dashboardUrl}}/",
             "description": "Confirms the dashboard hostname is routed to Vue."
           },
           "event": [{
@@ -74,7 +76,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/admin/login/",
+            "url": "{{baseUrl}}/admin/login/",
             "description": "Confirms the API hostname is routed to Django."
           },
           "event": [{
@@ -117,9 +119,10 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password2\": \"{{password}}\"\n}"
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password2\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": "{{base_url}}/api/auth/signup/"
+            "url": "{{baseUrl}}/api/auth/signup/"
           }
         },
         {
@@ -140,14 +143,15 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": "{{base_url}}/api/auth/login/"
+            "url": "{{baseUrl}}/api/auth/login/"
           }
         },
         {
           "name": "Current user",
-          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/auth/me/" }
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/auth/me/" }
         },
         {
           "name": "Refresh token",
@@ -161,7 +165,7 @@
               ]
             }
           }],
-          "request": { "method": "POST", "header": [], "url": "{{base_url}}/api/auth/token/refresh/" }
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/auth/token/refresh/" }
         }
       ]
     },
@@ -170,7 +174,7 @@
       "item": [
         {
           "name": "List educational content",
-          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/educational-contents" }
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/educational-contents" }
         },
         {
           "name": "Create educational content",
@@ -189,27 +193,32 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"educational-content\",\n  \"agreementNumber\": \"EDU-POSTMAN-001\",\n  \"name\": \"Postman educational agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"1000.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"1000.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"quarterlyDue\": \"250.00\",\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"contractText\": \"Created from Postman\",\n  \"isHidden\": false\n}"
+              "raw": "{\n  \"type\": \"educational-content\",\n  \"agreementNumber\": \"EDU-POSTMAN-001\",\n  \"name\": \"Postman educational agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"1000.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"1000.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"quarterlyDue\": \"250.00\",\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"contractText\": \"Created from Postman\",\n  \"isHidden\": false\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": "{{base_url}}/api/educational-contents"
+            "url": "{{baseUrl}}/api/educational-contents"
           }
         },
         {
           "name": "Get educational content",
-          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/educational-contents/{{educational_content_id}}/" }
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/" }
         },
         {
           "name": "Update educational content",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"updated-from-postman\"\n}" },
-            "url": "{{base_url}}/api/educational-contents/{{educational_content_id}}/"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"updated-from-postman\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/"
           }
         },
         {
           "name": "Delete educational content",
-          "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/api/educational-contents/{{educational_content_id}}/" }
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/" }
         }
       ]
     },
@@ -223,14 +232,15 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"nafath-center\",\n  \"agreementNumber\": \"NAFATH-POSTMAN-001\",\n  \"name\": \"Postman Nafath agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"500.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"500.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}"
+              "raw": "{\n  \"type\": \"nafath-center\",\n  \"agreementNumber\": \"NAFATH-POSTMAN-001\",\n  \"name\": \"Postman Nafath agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"500.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"500.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": "{{base_url}}/api/nafath-center/create"
+            "url": "{{baseUrl}}/api/nafath-center/create"
           }
         },
         {
           "name": "List Nafath center agreements",
-          "request": { "method": "GET", "header": [], "url": "{{base_url}}/api/nafath-center/" }
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/nafath-center/" }
         },
         {
           "name": "Create lifelong agreement",
@@ -239,9 +249,10 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"life-long\",\n  \"agreementNumber\": \"LIFE-POSTMAN-001\",\n  \"companyName\": \"Example Company\",\n  \"agreementName\": \"Postman lifelong agreement\",\n  \"subject\": \"API test\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"text\",\n  \"paymentText\": \"One payment\",\n  \"paymentSchedule\": [],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}"
+              "raw": "{\n  \"type\": \"life-long\",\n  \"agreementNumber\": \"LIFE-POSTMAN-001\",\n  \"companyName\": \"Example Company\",\n  \"agreementName\": \"Postman lifelong agreement\",\n  \"subject\": \"API test\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"paymentMethod\": \"text\",\n  \"paymentText\": \"One payment\",\n  \"paymentSchedule\": [],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": "{{base_url}}/api/life-long/create"
+            "url": "{{baseUrl}}/api/life-long/create"
           }
         },
         {
@@ -251,9 +262,10 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"other-agreements\",\n  \"agreementNumber\": \"OTHER-POSTMAN-001\",\n  \"name\": \"Postman other agreement\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"isHidden\": false,\n  \"rows\": [{\"header\": \"Term\", \"body\": \"Created from Postman\"}]\n}"
+              "raw": "{\n  \"type\": \"other-agreements\",\n  \"agreementNumber\": \"OTHER-POSTMAN-001\",\n  \"name\": \"Postman other agreement\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"isHidden\": false,\n  \"rows\": [{\"header\": \"Term\", \"body\": \"Created from Postman\"}]\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": "{{base_url}}/api/other-agreement/create"
+            "url": "{{baseUrl}}/api/other-agreement/create"
           }
         }
       ]
@@ -264,7 +276,7 @@
       "item": [
         {
           "name": "Logout",
-          "request": { "method": "POST", "header": [], "url": "{{base_url}}/api/auth/logout/" }
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/auth/logout/" }
         }
       ]
     }
