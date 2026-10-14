@@ -30,8 +30,8 @@
       "item": [
         {
           "name": "API gateway health",
-          "auth": { "type": "noauth" },
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/healthz",
@@ -44,8 +44,8 @@
         },
         {
           "name": "Dashboard gateway health",
-          "auth": { "type": "noauth" },
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": "{{dashboardUrl}}/health",
@@ -58,8 +58,8 @@
         },
         {
           "name": "Dashboard home through Nginx",
-          "auth": { "type": "noauth" },
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": "{{dashboardUrl}}/",
@@ -72,8 +72,8 @@
         },
         {
           "name": "Django admin through Nginx",
-          "auth": { "type": "noauth" },
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/admin/login/",
@@ -91,12 +91,12 @@
       "item": [
         {
           "name": "Signup",
-          "auth": { "type": "noauth" },
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "exec": [
+                  "pm.request.headers.remove('Authorization');",
                   "const suffix = Date.now();",
                   "pm.collectionVariables.set('username', `postman_user_${suffix}`);",
                   "pm.collectionVariables.set('email', `postman_${suffix}@example.com`);"
@@ -115,6 +115,7 @@
             }
           ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
@@ -127,18 +128,26 @@
         },
         {
           "name": "Login",
-          "auth": { "type": "noauth" },
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
-                "const data = pm.response.json();",
-                "if (data.data?.token) pm.collectionVariables.set('token', data.data.token);"
-              ]
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["pm.request.headers.remove('Authorization');"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "if (data.data?.token) pm.collectionVariables.set('token', data.data.token);"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
