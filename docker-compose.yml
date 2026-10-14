@@ -8,7 +8,7 @@ services:
     image: postgres:17-alpine
     container_name: cm_postgres
     ports:
-      - "${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_EXPOSED_PORT:-5432}:5432"
+      - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -26,7 +26,7 @@ services:
     image: dpage/pgadmin4:9.0
     container_name: cm_pgadmin
     ports:
-      - "${BIND_ADDRESS:-127.0.0.1}:${PGADMIN_PORT:-5050}:80"
+      - "${PGADMIN_PORT:-5050}:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
@@ -43,7 +43,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "${BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
@@ -55,7 +55,7 @@ services:
       - contract-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8000/admin/login/ > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8000/admin/login/ > /dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -69,12 +69,12 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     ports:
-      - "${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8081}:80"
+      - "${FRONTEND_PORT:-8081}:80"
     networks:
       - contract-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -84,7 +84,7 @@ services:
     image: nginx:1.28-alpine
     container_name: cm_nginx
     ports:
-      - "${BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-81}:81"
+      - "${APP_PORT:-81}:81"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_files:/app/staticfiles:ro
@@ -98,7 +98,7 @@ services:
       - contract-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:81/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:81/healthz || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
