@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول العقود مع تفاصيل وأوامر صرف قابلة للتحميل</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: #f4f7fb;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-right: 6px solid #3b82f6;
+            padding-right: 16px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e9edf4;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            background: white;
+        }
+        th {
+            background: #f8fafc;
+            color: #1e293b;
+            font-weight: 600;
+            padding: 16px 12px;
+            border-bottom: 2px solid #dce2ec;
+            text-align: center;  /* عناوين الأعمدة في المنتصف */
+        }
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #eef2f8;
+            color: #1f2a44;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-align: center;  /* محتوى الأعمدة في المنتصف */
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tbody tr:hover {
+            background: #f1f5fe;
+        }
+        tbody tr.active-row {
+            background: #e0edff;
+            border-right: 4px solid #3b82f6;
+        }
+        .badge {
+            background: #dbeafe;
+            color: #1e4f8b;
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .details-panel {
+            margin-top: 28px;
+            background: #f9fcff;
+            border-radius: 20px;
+            padding: 22px 24px;
+            border: 1px solid #e2eaf5;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        }
+        .details-panel.visible {
+            display: block;
+            animation: fadeSlide 0.25s ease-out;
+        }
+        @keyframes fadeSlide {
+            0% { opacity: 0.3; transform: translateY(6px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .detail-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px dashed #d0ddee;
+            padding-bottom: 14px;
+        }
+        .detail-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #0b1f3b;
+            font-weight: 600;
+        }
+        .btn-download {
+            background: #0b2b4a;
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #1e3a6b;
+            box-shadow: 0 4px 8px rgba(0, 20, 40, 0.08);
+        }
+        .btn-download:hover {
+            background: #0f2a4f;
+            transform: scale(1.01);
+            box-shadow: 0 8px 14px rgba(0, 20, 40, 0.12);
+        }
+        .btn-download:active {
+            transform: scale(0.97);
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 28px;
+            background: #f2f7fe;
+            padding: 18px 20px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+        }
+        .detail-item {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .detail-item strong {
+            color: #1f3a5f;
+            font-weight: 600;
+            min-width: 80px;
+        }
+        .detail-item span {
+            color: #1b2c47;
+        }
+        .payment-section {
+            margin-top: 12px;
+        }
+        .payment-section h3 {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1c3c6b;
+            margin: 10px 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .payment-table th {
+            background: #e9f0fa;
+            padding: 12px 10px;
+            text-align: center;  /* عناوين أعمدة أوامر الصرف في المنتصف */
+            font-weight: 600;
+            color: #1e3c66;
+            border-bottom: 1px solid #cdddec;
+        }
+        .payment-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5ecf6;
+            background: #fafdff;
+            vertical-align: middle;
+            text-align: center;  /* محتوى أعمدة أوامر الصرف في المنتصف */
+        }
+        .payment-table tr:last-child td {
+            border-bottom: none;
+        }
+        .empty-payments {
+            color: #6a7b96;
+            font-style: italic;
+            padding: 12px 0 4px 0;
+            background: transparent;
+            text-align: center;  /* توسيط رسالة عدم وجود أوامر صرف */
+        }
+        .btn-payment-download {
+            background: #eef2f8;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1f3a6b;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .btn-payment-download:hover {
+            background: #d9e2ef;
+            transform: scale(1.02);
+        }
+        .btn-payment-download:active {
+            transform: scale(0.96);
+        }
+        .footer-note {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #5e7290;
+            text-align: center;  /* توسيط الملاحظة السفلية */
+            border-top: 1px solid #dce5f0;
+            padding-top: 16px;
+        }
+        @media (max-width: 700px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .detail-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .btn-download {
+                width: 100%;
+                justify-content: center;
+            }
+            .payment-table td, .payment-table th {
+                padding: 10px 6px;
+                font-size: 13px;
+            }
+            .btn-payment-download {
+                padding: 4px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>📄 قائمة العقود</h1>
+    <div class="table-wrapper">
+        <table id="contractTable">
+            <thead>
+                <tr>
+                    <th>اسم العقد</th>
+                    <th>رقم العقد</th>
+                    <th>موضوع العقد</th>
+                </tr>
+            </thead>
+            <tbody id="contractBody">
+                <!-- سيتم ملء البيانات بواسطة JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- لوحة التفاصيل -->
+    <div id="detailsPanel" class="details-panel">
+        <div class="detail-header">
+            <h2 id="contractTitle">تفاصيل العقد</h2>
+            <button class="btn-download" id="downloadBtn">⬇️ تحميل الاتفاقية (PDF)</button>
+        </div>
+        <div class="detail-grid" id="detailGrid">
+            <div class="detail-item"><strong>رقم العقد:</strong> <span id="detailNumber">---</span></div>
+            <div class="detail-item"><strong>الموضوع:</strong> <span id="detailSubject">---</span></div>
+            <div class="detail-item"><strong>تاريخ التوقيع:</strong> <span id="detailDate">2025-01-15</span></div>
+            <div class="detail-item"><strong>الحالة:</strong> <span id="detailStatus" class="badge">نشط</span></div>
+        </div>
+        <div class="payment-section">
+            <h3>💰 أوامر الصرف المتعلقة</h3>
+            <table class="payment-table" id="paymentTable">
+                <thead>
+                    <tr><th>رقم أمر الصرف</th><th>المبلغ</th><th>التاريخ</th><th>جهة الصرف</th><th>التحميل</th></tr>
+                </thead>
+                <tbody id="paymentBody">
+                    <!-- يتم تعبئتها ديناميكياً -->
+                </tbody>
+            </table>
+            <div id="noPayments" class="empty-payments">لا توجد أوامر صرف مسجلة لهذا العقد.</div>
+        </div>
+        <div class="footer-note">⚠️ اضغط على أي سطر في الجدول لعرض التفاصيل وأوامر الصرف. يمكنك تحميل كل أمر صرف على حدة.</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // بيانات العقد + أوامر الصرف
+        const contractsData = [
+            {
+                id: 1,
+                name: "اتفاقية تطوير برمجيات",
+                number: "CT-101-2025",
+                subject: "تطوير نظام إدارة داخلي",
+                date: "2025-02-10",
+                status: "نشط",
+                payments: [
+                    { id: "PO-001", amount: "45,000", date: "2025-02-20", entity: "الإدارة المالية" },
+                    { id: "PO-004", amount: "22,500", date: "2025-03-15", entity: "وحدة المشاريع" }
+                ]
+            },
+            {
+                id: 2,
+                name: "اتفاقية توريد معدات",
+                number: "CT-205-2025",
+                subject: "توريد 50 خادم حاسوبي",
+                date: "2025-01-05",
+                status: "معلق",
+                payments: [
+                    { id: "PO-012", amount: "128,000", date: "2025-01-20", entity: "اللوجستيك" },
+                    { id: "PO-019", amount: "64,000", date: "2025-02-28", entity: "اللوجستيك" },
+                    { id: "PO-022", amount: "32,000", date: "2025-03-10", entity: "المشتريات" }
+                ]
+            },
+            {
+                id: 3,
+                name: "اتفاقية استشارات تسويق",
+                number: "CT-312-2025",
+                subject: "حملة تسويق رقمية",
+                date: "2024-12-01",
+                status: "منتهي",
+                payments: [
+                    { id: "PO-033", amount: "12,000", date: "2024-12-15", entity: "التسويق" }
+                ]
+            },
+            {
+                id: 4,
+                name: "اتفاقية صيانة مباني",
+                number: "CT-408-2025",
+                subject: "صيانة شاملة للمقر الرئيسي",
+                date: "2025-03-01",
+                status: "نشط",
+                payments: [] // بدون أوامر صرف
+            },
+            {
+                id: 5,
+                name: "اتفاقية تدريب موارد بشرية",
+                number: "CT-557-2025",
+                subject: "برنامج تدريب قادة",
+                date: "2025-02-14",
+                status: "قيد التنفيذ",
+                payments: [
+                    { id: "PO-101", amount: "9,750", date: "2025-02-28", entity: "الموارد البشرية" },
+                    { id: "PO-107", amount: "4,200", date: "2025-03-20", entity: "الموارد البشرية" }
+                ]
+            }
+        ];
+
+        const contractBody = document.getElementById('contractBody');
+        const detailsPanel = document.getElementById('detailsPanel');
+        const contractTitle = document.getElementById('contractTitle');
+        const detailNumber = document.getElementById('detailNumber');
+        const detailSubject = document.getElementById('detailSubject');
+        const detailDate = document.getElementById('detailDate');
+        const detailStatus = document.getElementById('detailStatus');
+        const paymentBody = document.getElementById('paymentBody');
+        const noPayments = document.getElementById('noPayments');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let activeContractId = null;
+
+        // دالة عرض الجدول الرئيسي
+        function renderTable() {
+            let html = '';
+            contractsData.forEach(contract => {
+                html += `
+                    <tr data-id="${contract.id}">
+                        <td>${contract.name}</td>
+                        <td><span class="badge">${contract.number}</span></td>
+                        <td>${contract.subject}</td>
+                    </tr>
+                `;
+            });
+            contractBody.innerHTML = html;
+
+            // إضافة مستمع النقر على الصفوف
+            document.querySelectorAll('#contractBody tr').forEach(row => {
+                row.addEventListener('click', function(e) {
+                    const id = parseInt(this.dataset.id);
+                    showContractDetails(id);
+                    // تمييز الصف النشط
+                    document.querySelectorAll('#contractBody tr').forEach(tr => tr.classList.remove('active-row'));
+                    this.classList.add('active-row');
+                });
+            });
+        }
+
+        // دالة تحميل أمر الصرف الفردي
+        function downloadSinglePayment(payment, contractNumber) {
+            const content = `
+        =============================================
+        أمر صرف
+        =============================================
+        رقم أمر الصرف   : ${payment.id}
+        المبلغ          : ${payment.amount}
+        التاريخ         : ${payment.date}
+        جهة الصرف       : ${payment.entity}
+        العقد المرتبط   : ${contractNumber}
+        ---------------------------------------------
+        تم التحميل من نظام إدارة العقود.
+        تاريخ التحميل: ${new Date().toLocaleDateString('ar-EG')}
+            `;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `أمر_صرف_${payment.id}_${contractNumber}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        // عرض تفاصيل العقد + أوامر الصرف
+        function showContractDetails(contractId) {
+            const contract = contractsData.find(c => c.id === contractId);
+            if (!contract) return;
+
+            activeContractId = contractId;
+
+            // تحديث التفاصيل الأساسية
+            contractTitle.textContent = `📌 ${contract.name}`;
+            detailNumber.textContent = contract.number;
+            detailSubject.textContent = contract.subject;
+            detailDate.textContent = contract.date;
+            detailStatus.textContent = contract.status;
+            // تلوين الحالة
+            detailStatus.className = 'badge';
+            if (contract.status === 'نشط') detailStatus.style.background = '#d1fae5';
+            else if (contract.status === 'معلق') detailStatus.style.background = '#fef3c7';
+            else if (contract.status === 'منتهي') detailStatus.style.background = '#e5e7eb';
+            else if (contract.status === 'قيد التنفيذ') detailStatus.style.background = '#dbeafe';
+            else detailStatus.style.background = '#f1f5f9';
+
+            // عرض أوامر الصرف مع أزرار التحميل
+            const payments = contract.payments || [];
+            paymentBody.innerHTML = '';
+            if (payments.length === 0) {
+                noPayments.style.display = 'block';
+            } else {
+                noPayments.style.display = 'none';
+                payments.forEach(p => {
+                    const row = document.createElement('tr');
+                    // إنشاء زر التحميل لكل أمر صرف
+                    const downloadBtnPayment = document.createElement('button');
+                    downloadBtnPayment.className = 'btn-payment-download';
+                    downloadBtnPayment.textContent = '⬇️ تحميل';
+                    downloadBtnPayment.addEventListener('click', function(e) {
+                        e.stopPropagation(); // منع تأثير النقر على الصف
+                        downloadSinglePayment(p, contract.number);
+                    });
+
+                    const cell1 = document.createElement('td');
+                    cell1.textContent = p.id;
+                    const cell2 = document.createElement('td');
+                    cell2.textContent = p.amount;
+                    const cell3 = document.createElement('td');
+                    cell3.textContent = p.date;
+                    const cell4 = document.createElement('td');
+                    cell4.textContent = p.entity;
+                    const cell5 = document.createElement('td');
+                    cell5.appendChild(downloadBtnPayment);
+
+                    row.appendChild(cell1);
+                    row.appendChild(cell2);
+                    row.appendChild(cell3);
+                    row.appendChild(cell4);
+                    row.appendChild(cell5);
+                    paymentBody.appendChild(row);
+                });
+            }
+
+            // إظهار اللوحة
+            detailsPanel.classList.add('visible');
+
+            // تحديث زر تحميل الاتفاقية كاملة
+            downloadBtn.onclick = function() {
+                downloadContract(contract);
+            };
+        }
+
+        // تحميل الاتفاقية كاملة (ملخص)
+        function downloadContract(contract) {
+            const paymentsText = contract.payments && contract.payments.length > 0
+                ? contract.payments.map(p => `   - أمر صرف ${p.id}: ${p.amount}  (${p.date}) - ${p.entity}`).join('\n')
+                : '   (لا توجد أوامر صرف)';
+
+            const content = `
+        =============================================
+        اتفاقية / عقد
+        =============================================
+        اسم العقد      : ${contract.name}
+        رقم العقد      : ${contract.number}
+        الموضوع        : ${contract.subject}
+        تاريخ التوقيع  : ${contract.date}
+        الحالة         : ${contract.status}
+        ---------------------------------------------
+        أوامر الصرف المرتبطة:
+        ${paymentsText}
+        =============================================
+        تم التحميل من نظام إدارة العقود.
+        تاريخ التحميل: ${new Date().toLocaleDateString('ar-EG')}
+            `;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `اتفاقية_${contract.number}_${contract.name.replace(/\s/g, '_')}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        // (اختياري) تحديد أول عقد بشكل افتراضي عند التحميل
+        function selectFirstContract() {
+            const firstRow = document.querySelector('#contractBody tr');
+            if (firstRow) {
+                firstRow.click();
+            }
+        }
+
+        // تهيئة
+        renderTable();
+        setTimeout(() => {
+            selectFirstContract();
+        }, 50);
+
+    })();
+</script>
+</body>
+</html>

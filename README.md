@@ -39,7 +39,7 @@ project's operating model:
 - Unified authentication, validation, permission, not-found, throttling, and
   server-error responses.
 - Arabic and English API messages selected by `Accept-Language`.
-- Unified signup, login, logout, current-user, and token-refresh responses.
+- Unified login, logout, current-user, password-change, and token-refresh responses.
 - Unified educational-content, lifelong-learning, Nafath Center, and other
   agreement responses.
 - Pagination metadata: `totalCount`, `page`, and `pageSize`.
@@ -366,10 +366,10 @@ allow public access to application ports.
 
 | URL | Expected result |
 | --- | --- |
-| `https://cm-dev.svuonline.edu.sy/` | Vue application; redirects inside the SPA to signup |
+| `https://cm-dev.svuonline.edu.sy/` | Vue application; redirects inside the SPA to login |
 | `https://cm-dev.svuonline.edu.sy/health` | `200 OK` with `OK` |
-| `https://cm-dev.svuonline.edu.sy/signup` | Signup page |
 | `https://cm-dev.svuonline.edu.sy/login` | Login page |
+| `https://cm-dev.svuonline.edu.sy/change-password` | Required temporary-password change page |
 | `https://cm-dev.svuonline.edu.sy/home` | Authenticated home page or login redirect |
 | `https://cm-dev.svuonline.edu.sy/planning` | Agreements planning page |
 | `https://cm-dev.svuonline.edu.sy/contracts/educational-content` | Educational-content page |
@@ -377,6 +377,8 @@ allow public access to application ports.
 | `https://cm-dev.svuonline.edu.sy/contracts/lifelong-learning` | Lifelong-learning page |
 | `https://cm-dev.svuonline.edu.sy/contracts/memorandum` | Memorandum page |
 | `https://cm-dev.svuonline.edu.sy/contracts/other-agreements` | Other-agreements page |
+| `https://cm-dev.svuonline.edu.sy/admin/roles` | Admin-only account, role, and permission management |
+| `https://cm-dev.svuonline.edu.sy/admin/users` | Admin-only user lifecycle management |
 
 #### API URLs
 
@@ -384,11 +386,14 @@ allow public access to application ports.
 | --- | --- | --- |
 | GET | `https://cmapi-dev.svuonline.edu.sy/healthz` | Nginx/API-host health check |
 | GET | `https://cmapi-dev.svuonline.edu.sy/admin/` | Django administration login |
-| POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/signup/` | Create account |
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/login/` | Login and obtain token |
+| POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/change-password/` | Change temporary or current password |
+| GET, POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/users/` | Admin-only list/filter or create users |
+| PATCH | `https://cmapi-dev.svuonline.edu.sy/api/auth/users/{id}/` | Admin-only update, activate/deactivate, role assignment, or password reset |
 | GET | `https://cmapi-dev.svuonline.edu.sy/api/auth/me/` | Current authenticated user |
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/token/refresh/` | Rotate authenticated token |
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/logout/` | Invalidate token |
+| GET, POST, PATCH, DELETE | `https://cmapi-dev.svuonline.edu.sy/api/auth/access-control/` | Admin-only role and permission management |
 | GET, POST | `https://cmapi-dev.svuonline.edu.sy/api/educational-contents` | List or create educational content |
 | GET, PUT, PATCH, DELETE | `https://cmapi-dev.svuonline.edu.sy/api/educational-contents/{id}/` | Read or modify one educational-content record |
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/educational-contents/upload/` | Upload educational-content files |
@@ -396,6 +401,28 @@ allow public access to application ports.
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/nafath-center/create` | Create a Nafath Center agreement |
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/life-long/create` | Create a lifelong-learning agreement |
 | POST | `https://cmapi-dev.svuonline.edu.sy/api/other-agreement/create` | Create another agreement type |
+
+## Role-based access control
+
+The application seeds these roles idempotently during backend startup: `admin`,
+`dean`, `contract`, `planning`, and `finance`. Each application feature has
+separate `read` and `write` permissions. Read controls page/list access; write
+controls create, update, delete, deactivate, file upload, and form-save actions.
+
+Administrators manage the permission matrix and user-role assignments at:
+
+`http://cm.localhost:81/admin/roles`
+
+The equivalent API is `/api/auth/access-control/` and is restricted
+to the Admin role. Set `DJANGO_SUPERUSER_USERNAME`,
+`DJANGO_SUPERUSER_EMAIL`, and `DJANGO_SUPERUSER_PASSWORD` before the first
+deployment to bootstrap the initial administrator. Existing non-superusers are
+not granted a role automatically and must be assigned one by an administrator.
+
+Public signup is disabled. Administrators create accounts at
+`http://cm.localhost:81/admin/users`; the generated temporary password is shown
+once. The user is redirected to `/change-password` after the first login and
+cannot use protected application features until the password is changed.
 
 Opening `https://cmapi-dev.svuonline.edu.sy/` itself may return Django `404`
 because the backend intentionally has no root route. That confirms the hostname
@@ -493,7 +520,7 @@ Select exactly one environment before running the collection. The local
 environment uses `cm.localhost:81` and `cmapi.localhost:81`; the production
 environment uses the two HTTPS SVU hostnames. The collection's service checks
 always pass through the Nginx gateway—none use the containers' diagnostic ports.
-Signup and Login store the token from `response.data.token`.
+Login stores the token from `response.data.token`.
 
 ## Troubleshooting
 
@@ -539,6 +566,18 @@ preserves that header and Django trusts it through `SECURE_PROXY_SSL_HEADER`.
 
 The DevOps proxy, application gateway, and Django must use the same upload size
 limit. The current project limit is `20 MB`.
+
+## Role dashboards and local testing
+
+The home page remains **لوحة التحكم**. Its data comes from `GET /api/dashboard/` and is scoped to the signed-in user's features. Admin receives system/user/order summaries, Dean receives agreement review and aggregate user counts, Finance receives order coverage and uploads, Contracts receives agreement/reminder metrics, and Planning receives only agreements visible to Planning. The endpoint never seeds agreement or financial data; an empty database shows zero counts.
+
+To explicitly create local accounts for testing all five built-in roles, run:
+
+```bash
+docker compose exec backend python manage.py seed_test_users
+```
+
+This optional command creates `cm_demo_admin`, `cm_demo_dean`, `cm_demo_finance`, `cm_demo_contract`, and `cm_demo_planning` with separate random passwords printed once. It preserves existing accounts and passwords on subsequent runs and is never called at startup. Test accounts can open their dashboard immediately; normal accounts created in User Management retain the mandatory first-login password change. No test passwords are stored in the repository.
 
 ## Production security checklist
 

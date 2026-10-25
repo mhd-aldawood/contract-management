@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاتفاقيات والعقود - Vue 3</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* إعادة تعيين كامل للهوامش والمسافات */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background: #f4f7fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        /* الحاوية الرئيسية بنفس الأبعاد الثابتة */
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            padding: 30px 25px;
+            transition: 0.3s;
+            /* تأكد من أن الحاوية لا تتغير */
+            min-height: auto;
+            display: block;
+        }
+
+        /* باقي التنسيقات كما كانت تماماً */
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a2639;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        h1 i {
+            color: #2a6f97;
+            font-size: 30px;
+        }
+        .subtitle {
+            color: #4a5b6e;
+            font-size: 16px;
+            border-right: 4px solid #2a6f97;
+            padding-right: 16px;
+            margin-bottom: 30px;
+            font-weight: 400;
+            background: #f0f5fa;
+            border-radius: 0 12px 12px 0;
+            padding: 12px 20px;
+            width: fit-content;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid #e9edf4;
+            background: white;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            min-width: 700px;
+        }
+        thead {
+            background: #1e2a3e;
+            color: #f0f7ff;
+        }
+        th {
+            padding: 18px 16px;
+            text-align: right;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        th i {
+            margin-left: 8px;
+            opacity: 0.8;
+        }
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #eaeef5;
+            vertical-align: middle;
+            background-color: white;
+            transition: background 0.15s;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .clickable-row {
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .clickable-row:hover td {
+            background-color: #f2f8ff;
+        }
+        .clickable-row:active td {
+            background-color: #dce9f5;
+        }
+        .contract-name {
+            font-weight: 600;
+            color: #0b1e2e;
+        }
+        .contract-id {
+            font-family: 'Courier New', monospace;
+            background: #edf3fa;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1f3a57;
+            display: inline-block;
+        }
+        .details-text {
+            color: #2d4059;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .attach-icon {
+            color: #2a6f97;
+            font-size: 18px;
+            background: #e5eff9;
+            padding: 8px 12px;
+            border-radius: 40px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .attach-icon i {
+            font-size: 16px;
+        }
+        .attach-icon:hover {
+            background: #cfe0f0;
+            color: #0f4b6e;
+        }
+        .file-preview-mini {
+            margin-right: 8px;
+            display: inline-block;
+        }
+        .upload-area {
+            margin-top: 30px;
+            background: #f8fafd;
+            border-radius: 20px;
+            padding: 18px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px dashed #b8ccdd;
+            transition: 0.3s;
+            min-height: 80px;
+        }
+        .upload-area.active {
+            border-color: #2a6f97;
+            background: #ecf5fe;
+        }
+        .upload-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .upload-info i {
+            font-size: 28px;
+            color: #2a6f97;
+        }
+        .upload-info span {
+            font-weight: 500;
+            color: #1b3144;
+        }
+        .upload-info small {
+            color: #5b6f84;
+            font-weight: 400;
+            margin-right: 8px;
+        }
+        .file-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 6px 18px 6px 12px;
+            border-radius: 40px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .file-preview img {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid #dce6f0;
+        }
+        .file-preview .file-name {
+            font-size: 14px;
+            color: #1d2e44;
+            max-width: 130px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .btn-upload {
+            background: #1e2a3e;
+            border: none;
+            color: white;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid #1e2a3e;
+        }
+        .btn-upload:hover {
+            background: #2f405a;
+            border-color: #2f405a;
+        }
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-upload i {
+            font-size: 15px;
+        }
+        .clear-btn {
+            background: transparent;
+            border: none;
+            color: #7f8fa3;
+            font-size: 13px;
+            cursor: pointer;
+            margin-right: 10px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            transition: 0.2s;
+        }
+        .clear-btn:hover {
+            background: #eaeef5;
+            color: #1d2e44;
+        }
+        .status-badge {
+            background: #d5e5f5;
+            color: #1a3a5a;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .no-image-msg {
+            color: #8a9db0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        @media (max-width: 640px) {
+            .container { padding: 20px 15px; }
+            .upload-area { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .file-preview { width: 100%; }
+            .btn-upload { width: 100%; justify-content: center; }
+        }
+
+        /* إصلاح إضافي: منع أي تغييرات غير متوقعة في الأبعاد */
+        #app {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>
+                <i class="fas fa-file-signature"></i>
+                قائمة الاتفاقيات والعقود
+            </h1>
+            <div class="subtitle">
+                <i class="fas fa-chevron-left" style="margin-left: 8px;"></i>
+                جدول يعرض اسم العقد، رقمه، وتفاصيله — اضغط على أي صف لرفع صورة
+            </div>
+
+            <!-- الجدول -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-tag"></i> اسم العقد / الاتفاقية</th>
+                            <th><i class="fas fa-hashtag"></i> الرقم</th>
+                            <th><i class="fas fa-align-left"></i> التفاصيل</th>
+                            <th><i class="fas fa-image"></i> الصورة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="contract in contracts" :key="contract.id"
+                            class="clickable-row"
+                            @click="selectContract(contract)">
+                            <td class="contract-name">
+                                <i class="fas fa-file-contract" style="margin-left: 8px; color:#2a6f97;"></i>
+                                {{ contract.name }}
+                            </td>
+                            <td><span class="contract-id">{{ contract.number }}</span></td>
+                            <td class="details-text">{{ contract.details }}</td>
+                            <td>
+                                <!-- عرض أيقونة إرفاق أو علامة مرفق -->
+                                <span v-if="!contract.imageData" class="attach-icon" @click.stop="triggerUpload(contract)">
+                                    <i class="fas fa-paperclip"></i> إرفاق
+                                </span>
+                                <span v-else class="file-preview-mini">
+                                    <i class="fas fa-check-circle" style="color:#1e7e34; font-size:20px;"></i>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- منطقة رفع الصورة (مرتبطة بالعقد المحدد) -->
+            <div class="upload-area" :class="{ active: selectedContract }">
+                <div class="upload-info">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <div>
+                        <span>{{ selectedContract ? selectedContract.name : 'اختر عقداً' }}</span>
+                        <small v-if="selectedContract">({{ selectedContract.number }})</small>
+                        <div style="margin-top: 5px;">
+                            <span class="status-badge">
+                                <i class="fas fa-info-circle"></i>
+                                {{ selectedContract && selectedContract.imageData ? 'صورة مرفقة' : 'اختر صورة' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <!-- معاينة الصورة -->
+                    <div class="file-preview" v-if="selectedContract && selectedContract.imageData">
+                        <img :src="selectedContract.imageData" alt="معاينة الصورة">
+                        <span class="file-name">{{ selectedContract.imageName || 'صورة' }}</span>
+                        <button class="clear-btn" @click="clearImage"><i class="fas fa-times"></i> إزالة</button>
+                    </div>
+                    <button class="btn-upload" @click="triggerUpload(selectedContract)" :disabled="!selectedContract">
+                        <i class="fas fa-folder-open"></i> رفع صورة
+                    </button>
+                    <input type="file" ref="fileInput" accept="image/*" style="display: none;" @change="handleFileUpload">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive } = Vue;
+
+        const app = createApp({
+            setup() {
+                // بيانات العقود - نفس البيانات السابقة
+                const contracts = reactive([
+                    {
+                        id: 1,
+                        name: 'اتفاقية تطوير برمجيات',
+                        number: 'CT-101',
+                        details: 'تطوير منصة إدارة المشاريع الداخلية مع واجهات برمجة',
+                        imageData: null,
+                        imageName: null
+                    },
+                    {
+                        id: 2,
+                        name: 'عقد توريد معدات',
+                        number: 'CT-205',
+                        details: 'توريد 50 خادم و 20 جهاز تخزين مع صيانة سنوية',
+                        imageData: null,
+                        imageName: null
+                    },
+                    {
+                        id: 3,
+                        name: 'اتفاقية خدمات استشارية',
+                        number: 'CT-309',
+                        details: 'استشارات مالية وقانونية لمدة 6 أشهر قابلة للتجديد',
+                        imageData: null,
+                        imageName: null
+                    }
+                ]);
+
+                const selectedContract = ref(null);
+                const fileInput = ref(null);
+
+                function selectContract(contract) {
+                    selectedContract.value = contract;
+                }
+
+                function triggerUpload(contract) {
+                    if (!contract) return;
+                    if (selectedContract.value?.id !== contract.id) {
+                        selectContract(contract);
+                    }
+                    // فتح الملف بعد تحديد العقد
+                    setTimeout(() => {
+                        if (fileInput.value) {
+                            fileInput.value.click();
+                        }
+                    }, 50);
+                }
+
+                function handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    if (!selectedContract.value) {
+                        alert('الرجاء تحديد عقد أولاً');
+                        return;
+                    }
+                    if (!file.type.startsWith('image/')) {
+                        alert('الرجاء اختيار ملف صورة صالح (jpg, png, gif, ...)');
+                        event.target.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const contract = selectedContract.value;
+                        contract.imageData = e.target.result;
+                        contract.imageName = file.name;
+                        event.target.value = '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                function clearImage() {
+                    if (!selectedContract.value) return;
+                    selectedContract.value.imageData = null;
+                    selectedContract.value.imageName = null;
+                    if (fileInput.value) {
+                        fileInput.value = '';
+                    }
+                }
+
+                // تحديد أول عقد بشكل افتراضي بعد تحميل الصفحة
+                setTimeout(() => {
+                    if (contracts.length > 0 && !selectedContract.value) {
+                        selectedContract.value = contracts[0];
+                    }
+                }, 100);
+
+                return {
+                    contracts,
+                    selectedContract,
+                    fileInput,
+                    selectContract,
+                    triggerUpload,
+                    handleFileUpload,
+                    clearImage
+                };
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
