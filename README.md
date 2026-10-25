@@ -3,6 +3,8 @@
 Vue 3 frontend, Django REST Framework backend, PostgreSQL, and Nginx, deployed
 as one Docker Compose application.
 
+For account usernames, generated passwords, demo-data seeding and role-by-role test steps, see [Prepare a shared test environment](#prepare-a-shared-test-environment).
+
 The deployment follows the same single-gateway pattern as the school project.
 The application Nginx routes by public hostname: `cm-dev.svuonline.edu.sy` is
 the Vue dashboard and `cmapi-dev.svuonline.edu.sy` is the Django API. Public
@@ -578,6 +580,74 @@ docker compose exec backend python manage.py seed_test_users
 ```
 
 This optional command creates `cm_demo_admin`, `cm_demo_dean`, `cm_demo_finance`, `cm_demo_contract`, and `cm_demo_planning` with separate random passwords printed once. It preserves existing accounts and passwords on subsequent runs and is never called at startup. Test accounts can open their dashboard immediately; normal accounts created in User Management retain the mandatory first-login password change. No test passwords are stored in the repository.
+
+### Prepare a shared test environment
+
+After pulling the latest `master` into the existing test checkout, rebuild the application and explicitly seed the test database:
+
+```bash
+git pull --ff-only origin master
+docker compose up -d --build backend frontend
+docker compose exec nginx nginx -s reload
+docker compose exec backend python manage.py seed_test_users
+docker compose exec backend python manage.py seed_demo_data
+```
+
+If the environment is deployed by the existing GitLab/Harbor pipeline, wait for its successful backend deployment instead of rebuilding manually. Connect to the test server, change into its deployment directory (for example `/home/deployer/contract-management`), and run only the two `docker compose exec backend ... seed_...` commands. Seeding is deliberately not part of the pipeline or container startup.
+
+Save the passwords printed by `seed_test_users` for that environment. They differ from passwords generated on another PC. Open the environment's login page and use each role account to test **لوحة التحكم**.
+
+#### Accounts and passwords
+
+| Role | Username | Main responsibility |
+| --- | --- | --- |
+| Admin | `cm_demo_admin` | Manage users, roles and permissions; access all features |
+| Dean | `cm_demo_dean` | Review all agreements and Finance orders; control visibility in Planning |
+| Finance | `cm_demo_finance` | Upload, edit, replace, download and remove disbursement orders |
+| Contracts | `cm_demo_contract` | Add agreements and manage their information and reminders |
+| Planning | `cm_demo_planning` | Review visible agreements and filter current, future and finished agreements |
+
+The seed command prints each newly created account as `role username password`. Copy the generated passwords from your own terminal. Passwords are not fixed and are not committed to Git. Existing accounts retain their current passwords; rerunning the command will report `already exists` rather than printing or resetting a password.
+
+If you need to set a new password for an existing test account, run the interactive command below and enter the new password twice. Replace the username to reset another account:
+
+```bash
+docker compose exec backend python manage.py changepassword cm_demo_admin
+```
+
+#### Run the app and confirm the seed
+
+1. Use the test environment's existing `.env` and database configuration. Start Docker Desktop or the server's Docker service before running Compose.
+2. Run the pull, build and seed commands above. The default data seed should report **40 agreements and 60 Finance orders created** on its first run. A repeat run reports skipped examples and preserves tester edits and removed orders.
+3. Check services with `docker compose ps`. If the backend is still starting, wait for it to become healthy before opening the app. Check startup problems with `docker compose logs --tail=100 backend`.
+4. Locally, open [the login page](http://cm.localhost:81/login). For a shared server, use its configured frontend address, such as [the development login page](https://cm-dev.svuonline.edu.sy/login). Refresh with **Ctrl+F5** after rebuilding.
+5. Sign in separately with each account. Use **تسجيل الخروج** before changing roles, or use separate private browser sessions.
+
+#### Test every role
+
+| Account | Dashboard checks | Feature checks |
+| --- | --- | --- |
+| Admin | Confirm agreement totals, active users, roles, Finance order totals, status/type charts and monthly activity. | Open **إدارة النظام → المستخدمون** and **الأدوار والصلاحيات**. Create a temporary user, assign a role, edit the user and test activation/deactivation. Create a custom role and verify its read/write permissions with that role's user. |
+| Dean | Confirm aggregate user counts, hidden agreement counts, current/future/finished charts and Finance coverage. | Open **العميد ومراجعة الاتفاقيات**, select a `DEMO-` agreement, inspect its details and download an order. Hide/show it and confirm the Planning account's list changes after refresh. User management should remain unavailable to Dean. |
+| Finance | Confirm total orders, agreements without orders, orders added this month, type distribution, coverage and recent uploads. | Open **المالية وأوامر الصرف**. Select a demo agreement with several orders. Upload a file, edit its name/notes, replace it, download it and remove it. Switch documents and confirm each document shows only its own orders. Refresh the dashboard to see the new counts. |
+| Contracts | Confirm agreement totals, agreements added this month, due reminders and upcoming expiration. | Open each agreement type, filter by a `DEMO-` number and review details. Add a new agreement with a reminder date. Check that it appears in that type's list and updates the dashboard. User/role administration and Finance order editing should remain unavailable. |
+| Planning | Confirm only agreements visible to Planning contribute to totals and charts. | Open **التخطيط والاتفاقيات**. Filter agreement types and date phases. Current agreements include today; future agreements start after today; finished agreements ended before today. Hidden agreements must not appear. Verify Dean visibility changes after refreshing. User administration and Finance editing should remain unavailable. |
+
+Default demo data, before any tester edits and **in addition to any records already in the database**:
+
+| Metric | Admin / Dean / Finance / Contracts | Planning |
+| --- | ---: | ---: |
+| Agreements | 40 | 30 visible agreements |
+| Current agreements | 20 | 15 |
+| Future agreements | 10 | 5 |
+| Finished agreements | 10 | 10 |
+| Hidden agreements | 10 | 0 |
+| Active Finance orders | 60 for Admin, Dean and Finance | Not exposed |
+| Agreements with / without Finance orders | 30 / 10 for Admin, Dean and Finance | Not exposed |
+
+The status counts above apply on the day the examples are created; they change as time passes or dates are edited. The six-month chart includes examples in every month. Admin can change role permissions, so customized access can differ from the defaults in this checklist. All demo agreement numbers start with `DEMO-`; names and downloadable text attachments are clearly labeled as test data.
+
+`seed_demo_data` is a CLI management command, not an API or automatic startup task. It creates 8 clearly labeled examples for each of the 5 agreement types (40 agreements), 60 downloadable Finance order files, agreement attachments and payment/clause examples. Dates include current, future and finished agreements; 10 agreements are hidden from Planning. Creation dates span the last six months so dashboard charts contain data. Existing records and edited demo examples are preserved on reruns. Use `--per-type 5` through `--per-type 10` to choose a different number; no records are removed when reducing the count. Run these demo commands against the designated test database.
 
 ## Production security checklist
 
