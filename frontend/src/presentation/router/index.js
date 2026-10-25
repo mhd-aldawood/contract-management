@@ -3,6 +3,12 @@ import container from '@/di/container'
 import { ROUTE_PATHS, ROUTE_NAMES } from '@/core/config'
 
 const routes = [
+  {
+    path: ROUTE_PATHS.finance,
+    name: ROUTE_NAMES.finance,
+    component: () => import('@/presentation/views/FinanceView.vue'),
+    meta: { requiresAuth: true, feature: 'finance', action: 'read' },
+  },
   { path: '/', redirect: '/login' },
   {
     path:ROUTE_PATHS.login ,

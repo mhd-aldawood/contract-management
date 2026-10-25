@@ -26,6 +26,12 @@ export const API_URLS = {
   planning: {
     list: `${API_BASE_URL}/api/planning/agreements/`,
   },
+  finance: {
+    agreements: `${API_BASE_URL}/api/finance/agreements/`,
+    orders: (kind, id) => `${API_BASE_URL}/api/finance/agreements/${encodeURIComponent(kind)}/${id}/orders/`,
+    order: (kind, id, orderId) => `${API_BASE_URL}/api/finance/agreements/${encodeURIComponent(kind)}/${id}/orders/${orderId}/`,
+    download: (kind, id, orderId) => `${API_BASE_URL}/api/finance/agreements/${encodeURIComponent(kind)}/${id}/orders/${orderId}/file/`,
+  },
 
   educationalContents: {
     list: `${API_BASE_URL}/api/educational-contents`,

@@ -13,6 +13,7 @@ export const ROUTE_NAMES = {
   changePassword: 'change-password',
   agreements: 'agreements',
   planning:'planning',
+  finance: 'finance',
   contracts: {
     educationalContent: 'educational-content',
     lifelongLearning: 'lifelong-learning',
@@ -35,6 +36,7 @@ export const ROUTE_PATHS = {
   changePassword: '/change-password',
   agreements: '/agreements',
   planning: '/planning',
+  finance: '/finance',
   contracts: {
     educationalContent: '/contracts/educational-content',
     lifelongLearning:   '/contracts/lifelong-learning',

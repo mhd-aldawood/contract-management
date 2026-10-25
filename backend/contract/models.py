@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from .educational_content.models import EducationalContent, PaymentScheduleItem  # noqa: F401
+from .finance_models import DisbursementOrder  # noqa: F401
 
 
 class Role(models.Model):
