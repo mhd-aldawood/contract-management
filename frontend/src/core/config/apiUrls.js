@@ -4,6 +4,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "
 
 export const API_URLS = {
   base: API_BASE_URL,
+  dashboard: `${API_BASE_URL}/api/dashboard/`,
 
   auth: {
     login: `${API_BASE_URL}/api/auth/login/`,

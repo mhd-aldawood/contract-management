@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from contract.planning import PlanningAgreementListView
+from contract.dashboard import DashboardView
 
 urlpatterns = [
+    path('api/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('api/planning/agreements/', PlanningAgreementListView.as_view(), name='planning-agreements'),
     path('api/finance/', include('contract.finance_urls')),
     path('api/dean/', include('contract.dean_urls')),
