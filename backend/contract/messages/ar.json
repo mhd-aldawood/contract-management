@@ -22,6 +22,7 @@
   "finance.orders.uploaded": "تم رفع أوامر الصرف بنجاح",
   "finance.order.replaced": "تم استبدال ملف أمر الصرف بنجاح",
   "finance.order.updated": "تم تعديل بيانات أمر الصرف بنجاح",
+  "dean.visibility.updated": "تم تحديث ظهور الاتفاقية في التخطيط",
   "finance.order.removed": "تمت إزالة أمر الصرف من القائمة",
   "request.validation_failed": "تعذر الحفظ. يرجى مراجعة الحقول المدخلة",
   "auth.unauthenticated": "يرجى تسجيل الدخول لإكمال العملية",

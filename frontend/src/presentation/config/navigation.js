@@ -6,6 +6,7 @@ export const NAV_GROUPS = [
       { name: 'home', label: 'لوحة التحكم', icon: '⌂', path: '/home', feature: 'home' },
       { name: 'planning', label: 'التخطيط والاتفاقيات', icon: '▤', path: '/planning', feature: 'planning' },
       { name: 'finance', label: 'المالية وأوامر الصرف', icon: '▥', path: '/finance', feature: 'finance' },
+      { name: 'dean', label: 'العميد ومراجعة الاتفاقيات', icon: '▧', path: '/dean', feature: 'dean' },
     ],
   },
   {

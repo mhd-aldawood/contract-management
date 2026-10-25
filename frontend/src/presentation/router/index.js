@@ -4,6 +4,12 @@ import { ROUTE_PATHS, ROUTE_NAMES } from '@/core/config'
 
 const routes = [
   {
+    path: ROUTE_PATHS.dean,
+    name: ROUTE_NAMES.dean,
+    component: () => import('@/presentation/views/DeanView.vue'),
+    meta: { requiresAuth: true, feature: 'dean', action: 'read' },
+  },
+  {
     path: ROUTE_PATHS.finance,
     name: ROUTE_NAMES.finance,
     component: () => import('@/presentation/views/FinanceView.vue'),

@@ -22,6 +22,7 @@
   "finance.orders.uploaded": "Disbursement orders uploaded successfully",
   "finance.order.replaced": "Disbursement order file replaced successfully",
   "finance.order.updated": "Disbursement order details updated successfully",
+  "dean.visibility.updated": "Agreement visibility in Planning updated successfully",
   "finance.order.removed": "Disbursement order removed from the list",
   "request.validation_failed": "The form could not be saved. Please review the submitted fields",
   "auth.unauthenticated": "Please sign in to complete this action",

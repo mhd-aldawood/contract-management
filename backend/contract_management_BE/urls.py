@@ -21,6 +21,7 @@ from contract.planning import PlanningAgreementListView
 urlpatterns = [
     path('api/planning/agreements/', PlanningAgreementListView.as_view(), name='planning-agreements'),
     path('api/finance/', include('contract.finance_urls')),
+    path('api/dean/', include('contract.dean_urls')),
     path('admin/', admin.site.urls),
     path('api/auth/', include('contract.urls')),
     # Educational content — separate prefix

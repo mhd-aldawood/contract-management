@@ -14,6 +14,7 @@ export const ROUTE_NAMES = {
   agreements: 'agreements',
   planning:'planning',
   finance: 'finance',
+  dean: 'dean',
   contracts: {
     educationalContent: 'educational-content',
     lifelongLearning: 'lifelong-learning',
@@ -37,6 +38,7 @@ export const ROUTE_PATHS = {
   agreements: '/agreements',
   planning: '/planning',
   finance: '/finance',
+  dean: '/dean',
   contracts: {
     educationalContent: '/contracts/educational-content',
     lifelongLearning:   '/contracts/lifelong-learning',
