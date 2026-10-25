@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "663e814e-7de0-4dc5-9b8b-d4103a962c4d",
     "name": "Contract Management API",
-    "description": "API and Nginx gateway checks for Contract Management. Select the Local or Production Postman environment, then run Signup and Login first to populate the collection token.",
+    "description": "API and Nginx gateway checks for Contract Management. Select the Local or Production Postman environment, then run Signup or Login first to populate that environment's token.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -109,7 +109,7 @@
                 "exec": [
                   "pm.test('User created', () => pm.response.to.have.status(201));",
                   "const data = pm.response.json();",
-                  "if (data.data?.token) pm.collectionVariables.set('token', data.data.token);"
+                  "if (data.data?.token) pm.environment.set('token', data.data.token);"
                 ]
               }
             }
@@ -141,7 +141,7 @@
                 "exec": [
                   "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
                   "const data = pm.response.json();",
-                  "if (data.data?.token) pm.collectionVariables.set('token', data.data.token);"
+                  "if (data.data?.token) pm.environment.set('token', data.data.token);"
                 ]
               }
             }
@@ -170,7 +170,7 @@
               "exec": [
                 "pm.test('Token rotated', () => pm.response.to.have.status(200));",
                 "const data = pm.response.json();",
-                "if (data.data?.key) pm.collectionVariables.set('token', data.data.key);"
+                "if (data.data?.key) pm.environment.set('token', data.data.key);"
               ]
             }
           }],
