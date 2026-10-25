@@ -7,6 +7,7 @@ export class LifeLong {
     subject = "",
     startDate = "",
     endDate = "",
+    reminderDate = "",
     paymentMethod = "", // '' | 'text' | 'table'
     paymentText = "",
     paymentSchedule = [],
@@ -24,6 +25,7 @@ export class LifeLong {
     this.subject = subject;
     this.startDate = startDate;
     this.endDate = endDate;
+    this.reminderDate = reminderDate;
     this.paymentMethod = paymentMethod;
     this.paymentText = paymentText;
     this.paymentSchedule = paymentSchedule;
@@ -44,6 +46,7 @@ export class LifeLong {
     subject: '',
     startDate: '',
     endDate: '',
+    reminderDate: '',
     paymentMethod: '',
     paymentText: '',
     paymentSchedule: [],

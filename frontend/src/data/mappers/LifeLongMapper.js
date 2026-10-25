@@ -8,6 +8,7 @@ const LIFE_LONG_KEYS = [
     'subject',
     'startDate',
     'endDate',
+    'reminderDate',
     'paymentMethod',
     'paymentText',
     'paymentSchedule',

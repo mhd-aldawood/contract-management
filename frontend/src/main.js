@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './presentation/router';
 import '@/assets/styles/main.css';
+import '@/assets/styles/theme.css';
 import { rootLogger } from '@/core/logger';
 
 const app = createApp(App);                  // (1) create first

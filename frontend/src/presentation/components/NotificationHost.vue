@@ -52,12 +52,12 @@ const { notifications, remove } = useNotifications()
   padding: 0.85rem 1rem;
   color: #fff;
   border-radius: 0.75rem;
-  box-shadow: 0 10px 30px rgb(15 23 42 / 24%);
+  box-shadow: var(--shadow-lg);
   pointer-events: auto;
 }
 
-.notification--success { background: #15803d; }
-.notification--error { background: #b91c1c; }
+.notification--success { background: var(--color-success); }
+.notification--error { background: var(--color-danger); }
 
 .notification__icon {
   display: grid;

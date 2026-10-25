@@ -11,6 +11,7 @@ export default class EducationalContent {
     estimatedCost = 0,
     startDate = '',
     endDate = '',
+    reminderDate = '',
     paymentMethod = '',        // 'text' | 'table' | ''
     paymentText = '',
     paymentSchedule = [],       // [{ label, amount, dueDate }]
@@ -34,6 +35,7 @@ export default class EducationalContent {
     this.estimatedCost = estimatedCost
     this.startDate = startDate
     this.endDate = endDate
+    this.reminderDate = reminderDate
     this.paymentMethod = paymentMethod
     this.paymentText = paymentText
     this.paymentSchedule = paymentSchedule
@@ -61,6 +63,7 @@ static empty(type = 'educational-content') {
     estimatedCost: 0,
     startDate: '',
     endDate: '',
+    reminderDate: '',
     paymentMethod: '',
     paymentText: '',
     paymentSchedule: [],

@@ -7,6 +7,7 @@ export class OtherAgreement {
     type = 'other-agreement',
     startDate = '',
     endDate = '',
+    reminderDate = '',
     isHidden = false,
     rows = [],
     fileName = '',
@@ -18,6 +19,7 @@ export class OtherAgreement {
     this.type = type
     this.startDate = startDate || ''
     this.endDate = endDate || ''
+    this.reminderDate = reminderDate || ''
     this.isHidden = Boolean(isHidden)
     this.rows = rows.map((r) =>
       r instanceof OtherAgreementRow ? r : new OtherAgreementRow(r)
@@ -34,6 +36,7 @@ export class OtherAgreement {
       name: '',
       startDate: '',
       endDate: '',
+      reminderDate: '',
       isHidden: false,
       rows: [],                          // ← ADD (the important one)
       fileName: '',
@@ -58,6 +61,7 @@ export class OtherAgreement {
       name: this.name,
       startDate: this.startDate,
       endDate: this.endDate,
+      reminderDate: this.reminderDate,
       isHidden: this.isHidden,
       rows: this.rows.map((r) =>
         r instanceof OtherAgreementRow ? r.toJSON() : r

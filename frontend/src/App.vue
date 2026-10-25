@@ -1,13 +1,17 @@
 <template>
-  <router-view />
+  <div class="app-root" :class="{ 'app-root--authenticated': showShell }">
+    <AppToolbar v-if="showShell" />
+    <div class="app-main"><router-view :key="route.path" /></div>
+  </div>
   <NotificationHost />
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppToolbar from '@/presentation/components/AppToolbar.vue'
 import NotificationHost from '@/presentation/components/NotificationHost.vue'
-</script>
 
-<style>
-* { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-body { margin: 0; }
-</style>
+const route = useRoute()
+const showShell = computed(() => route.meta.requiresAuth && !route.meta.allowPasswordChange)
+</script>

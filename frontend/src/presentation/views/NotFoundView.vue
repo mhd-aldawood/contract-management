@@ -26,14 +26,14 @@
   padding: 2rem 1rem;
   direction: rtl;
   font-family: inherit;
-  color: #2d3748;
+  color: var(--color-text);
 }
 
 .code {
   font-size: 5rem;
   font-weight: 800;
   margin: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-800));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -48,7 +48,7 @@
 
 .hint {
   font-size: 1rem;
-  color: #718096;
+  color: var(--color-text-muted);
   margin: 0 0 1.75rem;
   max-width: 30rem;
   line-height: 1.7;
@@ -60,7 +60,7 @@
   justify-content: center;
   padding: 0.6rem 1.4rem;
   border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary-700);
   color: #fff;
   font-weight: 600;
   text-decoration: none;
@@ -69,7 +69,7 @@
 
 .home-link:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+  box-shadow: var(--shadow-md);
 }
 
 .home-link:active {

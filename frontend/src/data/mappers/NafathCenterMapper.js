@@ -10,6 +10,7 @@ const AGREEMENT_KEYS = [
   'estimatedCost',
   'startDate',
   'endDate',
+  'reminderDate',
   'paymentMethod',
   'paymentText',
   'status',

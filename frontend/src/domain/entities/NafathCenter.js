@@ -9,6 +9,7 @@ export class NafathCenter {
     estimatedCost = 0,
     startDate = "",
     endDate = "",
+    reminderDate = "",
     paymentMethod = "", // '' | 'text' | 'table'
     paymentText = "",
     paymentSchedule = [],
@@ -27,6 +28,7 @@ export class NafathCenter {
     this.estimatedCost = estimatedCost;
     this.startDate = startDate;
     this.endDate = endDate;
+    this.reminderDate = reminderDate;
     this.paymentMethod = paymentMethod;
     this.paymentText = paymentText;
     this.paymentSchedule = paymentSchedule;
@@ -49,6 +51,7 @@ export class NafathCenter {
     estimatedCost: 0,
     startDate: '',
     endDate: '',
+    reminderDate: '',
     paymentMethod: '',
     paymentText: '',
     paymentSchedule: [],

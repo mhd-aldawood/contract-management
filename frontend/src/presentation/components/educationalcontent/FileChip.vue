@@ -80,8 +80,8 @@ function onDownload(event) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  background: var(--color-muted-surface);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   font-size: 0.875rem;
   flex: 0 0 auto;
@@ -97,7 +97,7 @@ function onDownload(event) {
 }
 
 .file-link {
-  color: #2563eb;
+  color: var(--color-info);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -109,7 +109,7 @@ function onDownload(event) {
 .file-remove {
   border: none;
   background: transparent;
-  color: #ef4444;
+  color: var(--color-danger);
   cursor: pointer;
   font-weight: bold;
   line-height: 1;
@@ -118,6 +118,6 @@ function onDownload(event) {
 }
 
 .file-remove:hover {
-  color: #b91c1c;
+  color: #a62626;
 }
 </style>

@@ -38,7 +38,7 @@ export default class OtherAgreementRemoteDataSource {
 
         const token = localStorage.getItem("access_token");
 
-        const saved = await this._request(API_URLS.otherAgreement.create, {
+        const saved = await this._request(form.type === 'memorandum' ? API_URLS.memorandum.create : API_URLS.otherAgreement.create, {
             method: "POST",
             body: fd,
             headers: {

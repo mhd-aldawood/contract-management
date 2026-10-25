@@ -13,64 +13,8 @@ body {
 /* #endregion */
 /* #region AUTH SCREENS*/
 /* =========================================================
-   AUTH SCREENS (Signup + Login share these)
+   AUTH SCREENS
    ========================================================= */
-.auth-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-}
-.auth-card {
-  background: #fff;
-  padding: 2.5rem;
-  border-radius: 12px;
-  width: 360px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-}
-.auth-card h1 {
-  margin: 0 0 1.5rem;
-  text-align: center;
-  color: #333;
-}
-.auth-card input {
-  width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-.auth-card button {
-  width: 100%;
-  padding: 0.75rem;
-  background: #667eea;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.auth-card button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.auth-error {
-  color: #e53e3e;
-  text-align: center;
-  margin-top: 1rem;
-}
-.auth-hint {
-  text-align: center;
-  margin-top: 1rem;
-  color: #666;
-}
-.auth-hint a {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 600;
-}
 /* #endregion */
 /* #region toolbar */
 /* =========================================================
@@ -643,4 +587,3 @@ body {
                 font-size: 12px;
             }
         }
-  

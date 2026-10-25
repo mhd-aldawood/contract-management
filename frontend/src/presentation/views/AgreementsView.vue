@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import container  from '@/di/container';
 import useAgreements from '@/presentation/composables/useAgreements';
 import AgreementFilters from '@/presentation/components/AgreementFilters.vue';
 import AgreementTable from '@/presentation/components/AgreementTable.vue';
 import CostDetailsModal from '@/presentation/components/CostDetailsModal.vue';
+import PageHeader from '@/presentation/components/PageHeader.vue';
 
 const {
   filteredAgreements,
@@ -30,18 +31,16 @@ const openCostModal = async (agreementNumber) => {
 
   costDetails.value = await container.getCostDetailsUseCase.execute();
   modalVisible.value = true;
-  document.body.style.overflow = 'hidden';
 };
 
 const closeCostModal = () => {
   modalVisible.value = false;
-  document.body.style.overflow = 'auto';
 };
 
 /* ---------- Formatters ---------- */
 const formatDate = (date) => {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('ar-SA', {
+  return new Date(date).toLocaleDateString('ar-SY', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -50,7 +49,7 @@ const formatDate = (date) => {
 
 const formatCost = (cost) => {
   if (cost === null || cost === undefined || cost === 0) return '';
-  return new Intl.NumberFormat('ar-SA', {
+  return new Intl.NumberFormat('ar-SY', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(cost);
@@ -84,7 +83,7 @@ const exportToExcel = async () => {
     filteredAgreements.value,
     costDetails.value,
     { statusArabic: STATUS_LABEL, typeArabic: TYPE_LABEL },
-    () => new Date().toLocaleDateString('ar-SA')
+    () => new Date().toLocaleDateString('ar-SY')
   );
 
   const XLSX = window.XLSX;
@@ -99,24 +98,14 @@ const exportToExcel = async () => {
   XLSX.writeFile(workbook, 'الاتفاقيات_مع_تفاصيل_التكلفة.xlsx');
 };
 
-/* ---------- Keyboard: ESC closes modal ---------- */
-const onKeydown = (e) => {
-  if (e.key === 'Escape' && modalVisible.value) closeCostModal();
-};
-
 onMounted(() => {
   loadAgreements();
-  document.addEventListener('keydown', onKeydown);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', onKeydown);
 });
 </script>
 
 <template>
   <div class="container" dir="rtl">
-    <h1>الاتفاقيات</h1>
+    <PageHeader icon="📋" eyebrow="التخطيط والمتابعة" title="الاتفاقيات" description="استعرض الاتفاقيات وفلتر النتائج ثم صدّر البيانات عند الحاجة." />
 
     <AgreementFilters
       :active-filters="activeFilters"

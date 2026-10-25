@@ -6,7 +6,6 @@ import { createLogger } from '@/core/logger'
 import { useFormValidation } from '@/presentation/composables/useFormValidation'
 
 const logger = createLogger('useOtherAgreementForm')
-import { watchEffect } from 'vue'
 
 
 export function useOtherAgreementForm(type = 'other-agreement') {
@@ -61,6 +60,8 @@ export function useOtherAgreementForm(type = 'other-agreement') {
   
     function clearFile() {
       form.fileName = ''
+      form.fileUrl = ''
+      form.file = null
     }
   
     /* ---------- save with validation gate ---------- */
@@ -78,10 +79,11 @@ export function useOtherAgreementForm(type = 'other-agreement') {
       saving.value = true
       try {
         logger.debug('useOtherAgreements save func', form)
-        const saved = await container.saveOtherUseCase.execute(form)
-        Object.assign(form, saved instanceof OtherAgreement ? saved.toJSON() : saved)
+        const response = await container.saveOtherUseCase.execute(form)
+        const saved = response?.data ?? response
+        if (saved) Object.assign(form, saved instanceof OtherAgreement ? saved.toJSON() : saved)
         resetValidation()
-        return saved
+        return response
       } catch (e) {
         error.value = e.message
         throw e

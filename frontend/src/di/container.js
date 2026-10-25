@@ -1,6 +1,5 @@
 import AuthLocalDataSource from "@/data/datasources/AuthLocalDataSource";
 import AuthRepositoryImpl from "@/data/repositories/AuthRepositoryImpl";
-import SignupUseCase from "@/domain/usecases/SignupUseCase";
 import LoginUseCase from "@/domain/usecases/LoginUseCase";
 import AuthRemoteDataSource from "@/data/datasources/AuthRemoteDataSource";
 
@@ -58,7 +57,6 @@ const otherAgreementRepository=new OtherAgreementRepositoryImpl({remoteDataSourc
 const container = {
   // Auth
   authRepository,
-  signupUseCase: new SignupUseCase(authRepository),
   loginUseCase: new LoginUseCase(authRepository),
 
   // Agreements

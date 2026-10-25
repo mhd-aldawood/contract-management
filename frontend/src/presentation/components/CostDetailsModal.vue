@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import BaseModal from '@/presentation/components/BaseModal.vue';
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -22,16 +23,7 @@ const costDisplay = computed(() =>
 </script>
 
 <template>
-  <div
-    class="modal-overlay"
-    :class="{ active: visible }"
-    @click.self="emit('close')"
-  >
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>📊 تفاصيل التكلفة</h2>
-        <button class="modal-close" @click="emit('close')">✕</button>
-      </div>
+  <BaseModal :model-value="visible" title="تفاصيل التكلفة" size="lg" @close="emit('close')">
 
       <div v-if="agreement" class="modal-agreement-info">
         <strong>رقم الاتفاقية:</strong> {{ agreement.number }} &nbsp;|&nbsp;
@@ -57,6 +49,5 @@ const costDisplay = computed(() =>
       </table>
 
       <div class="modal-total">المجموع: {{ totalPercentage }}%</div>
-    </div>
-  </div>
+  </BaseModal>
 </template>

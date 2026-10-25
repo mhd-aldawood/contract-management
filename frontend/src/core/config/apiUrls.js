@@ -7,9 +7,12 @@ export const API_URLS = {
 
   auth: {
     login: `${API_BASE_URL}/api/auth/login/`,
-    signup: `${API_BASE_URL}/api/auth/signup/`,
     logout: `${API_BASE_URL}/api/auth/logout/`,
     me: `${API_BASE_URL}/api/auth/me/`,
+    accessControl: `${API_BASE_URL}/api/auth/access-control/`,
+    changePassword: `${API_BASE_URL}/api/auth/change-password/`,
+    users: `${API_BASE_URL}/api/auth/users/`,
+    userById: (id) => `${API_BASE_URL}/api/auth/users/${id}/`,
   },
 
   agreements: {
@@ -20,6 +23,9 @@ export const API_URLS = {
     filter: `${API_BASE_URL}/api/agreements/filter`,
     costs: `${API_BASE_URL}/api/agreements/costs`,
   },
+  planning: {
+    list: `${API_BASE_URL}/api/planning/agreements/`,
+  },
 
   educationalContents: {
     list: `${API_BASE_URL}/api/educational-contents`,
@@ -28,9 +34,11 @@ export const API_URLS = {
     save: `${API_BASE_URL}/api/educational-contents/save`,
   },
   nafathCenter: {
+    list: `${API_BASE_URL}/api/nafath-center/`,
     create: `${API_BASE_URL}/api/nafath-center/create`,
   },
   lifeLong: {
+    list: `${API_BASE_URL}/api/life-long/`,
     create: `${API_BASE_URL}/api/life-long/create`,
   },
 
@@ -39,7 +47,12 @@ export const API_URLS = {
     settings: `${API_BASE_URL}/api/users/settings`,
   },
     otherAgreement: {
+    list: `${API_BASE_URL}/api/other-agreement/`,
     create: `${API_BASE_URL}/api/other-agreement/create`,
+  },
+  memorandum: {
+    list: `${API_BASE_URL}/api/memorandum/`,
+    create: `${API_BASE_URL}/api/memorandum/create`,
   },
 };
 

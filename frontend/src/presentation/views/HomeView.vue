@@ -1,6 +1,5 @@
 <template>
   <div class="home">
-    <AppToolbar />
     <main class="content">
       <h1>Welcome, {{ user?.username }}! 👋</h1>
       <p>Select an item from the toolbar above to navigate.</p>
@@ -30,7 +29,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import AppToolbar from '@/presentation/components/AppToolbar.vue'
 import container from '@/di/container'
 
 const user = computed(() => container.authRepository.getCurrentUser())

@@ -5,12 +5,13 @@
       <span>طباعة نص العقد</span>
     </button>
 
-    <label class="btn upload-btn">
+    <label class="btn upload-btn" :class="{ disabled: uploadDisabled }">
       <span class="icon">📎</span>
       <span>ارفاق الملف</span>
       <input
         type="file"
         accept=".txt"
+        :disabled="uploadDisabled"
         @change="onFile"
         hidden
       />
@@ -19,6 +20,10 @@
 </template>
 
 <script setup>
+defineProps({
+  uploadDisabled: { type: Boolean, default: false },
+})
+
 const emit = defineEmits(['print', 'upload'])
 
 function onFile(e) {
@@ -45,7 +50,7 @@ function onFile(e) {
   gap: 0.5rem;
   padding: 0.55rem 1.1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
   font-family: inherit;
@@ -53,7 +58,7 @@ function onFile(e) {
   transition: all 0.2s ease;
   white-space: nowrap;
   user-select: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn .icon {
@@ -63,44 +68,50 @@ function onFile(e) {
 
 /* ── Print button ───────────────────────── */
 .print-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary-700);
   color: #fff;
 }
 
 .print-btn:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b3fa0 100%);
+  background: var(--color-primary-800);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.35);
+  box-shadow: var(--shadow-md);
 }
 
 .print-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Upload button ──────────────────────── */
 .upload-btn {
-  background: #ffffff;
-  color: #4a5568;
-  border: 1.5px solid #cbd5e0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border-strong);
 }
 
 .upload-btn:hover {
-  background: #f7fafc;
-  border-color: #667eea;
-  color: #667eea;
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-600);
+  color: var(--color-primary-800);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .upload-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--shadow-sm);
+}
+
+.upload-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ── Focus accessibility ────────────────── */
 .btn:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid var(--color-primary-600);
   outline-offset: 2px;
 }
 </style>
