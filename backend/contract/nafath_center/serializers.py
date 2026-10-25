@@ -4,6 +4,13 @@ from rest_framework import serializers
 from .models import NafathCenterAgreement, PaymentScheduleRow
 
 
+class FlexibleDateField(serializers.DateField):
+    def to_internal_value(self, value):
+        if value in ('', None):
+            return None
+        return super().to_internal_value(value)
+
+
 class PaymentScheduleRowSerializer(serializers.ModelSerializer):
     dueDate = serializers.DateField(
         source='due_date', required=False, allow_null=True
@@ -36,6 +43,7 @@ class NafathCenterAgreementSerializer(serializers.ModelSerializer):
     estimatedCost     = serializers.DecimalField(source='estimated_cost', max_digits=14, decimal_places=2, required=False)
     startDate         = serializers.DateField(source='start_date',   required=False, allow_null=True)
     endDate           = serializers.DateField(source='end_date',     required=False, allow_null=True)
+    reminderDate      = FlexibleDateField(source='reminder_date', required=False, allow_null=True)
     paymentMethod     = serializers.CharField(source='payment_method', required=False, allow_blank=True)
     paymentText       = serializers.CharField(source='payment_text',   required=False, allow_blank=True)
     budgetType        = serializers.CharField(source='budget_type',    required=False, allow_blank=True)
@@ -47,7 +55,7 @@ class NafathCenterAgreementSerializer(serializers.ModelSerializer):
         # list every wire field you want exposed
         fields = [
             'id', 'type', 'agreementNumber', 'name', 'companyName', 'subject',
-             'estimatedCost', 'startDate', 'endDate',
+             'estimatedCost', 'startDate', 'endDate', 'reminderDate',
             'paymentMethod', 'paymentText', 'paymentSchedule',
             'status', 'disbursement', 'budgetType',
             'isHidden', 'fileName', 'file',

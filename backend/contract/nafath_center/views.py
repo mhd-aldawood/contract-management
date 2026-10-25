@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from contract.api.responses import success_response
+from contract.rbac import HasFeaturePermission
 from .models import NafathCenterAgreement
 from .serializers import NafathCenterAgreementSerializer
 
@@ -14,7 +15,8 @@ class NafathCenterCreateView(APIView):
     Accepts both application/json and multipart/form-data.
     """
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasFeaturePermission]
+    feature_code = 'nafath-centers'
     def post(self, request, *args, **kwargs):
         serializer = NafathCenterAgreementSerializer(
             data=request.data,
@@ -32,6 +34,9 @@ class NafathCenterCreateView(APIView):
 
 class NafathCenterListView(APIView):
     """GET /api/nafath-center/  — list all agreements."""
+
+    permission_classes = [IsAuthenticated, HasFeaturePermission]
+    feature_code = 'nafath-centers'
 
     def get(self, request, *args, **kwargs):
         qs = NafathCenterAgreement.objects.all()

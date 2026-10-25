@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from contract.planning import PlanningAgreementListView
 
 urlpatterns = [
+    path('api/planning/agreements/', PlanningAgreementListView.as_view(), name='planning-agreements'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('contract.urls')),
     # Educational content — separate prefix

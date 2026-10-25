@@ -4,6 +4,28 @@ from django.utils.html import format_html
 from .educational_content.models import EducationalContent, PaymentScheduleItem
 from .nafath_center.models import PaymentScheduleRow, NafathCenterAgreement
 from .other.models import AgreementRow, Agreement
+from .models import Profile, Role, RolePermission
+
+
+class RolePermissionInline(admin.TabularInline):
+    model = RolePermission
+    extra = 0
+    fields = ('feature', 'can_read', 'can_write')
+
+
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name')
+    search_fields = ('code', 'name')
+    inlines = [RolePermissionInline]
+
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role', 'must_change_password', 'created_at')
+    list_filter = ('role', 'must_change_password')
+    search_fields = ('user__username', 'user__email')
+    autocomplete_fields = ('user', 'role')
 
 
 # ---------------- EducationalContent ----------------

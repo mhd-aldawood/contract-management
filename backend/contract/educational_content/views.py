@@ -3,10 +3,10 @@ import json
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from contract.api.responses import success_response
+from contract.rbac import HasFeaturePermission
 from .models import EducationalContent
 from .serializers import EducationalContentSerializer
 
@@ -45,7 +45,8 @@ class EducationalContentListCreateView(APIView):
     POST /api/educational-contents/    → create
     """
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    permission_classes = [AllowAny]   # ⚠️ switch to IsAuthenticated in prod
+    permission_classes = [HasFeaturePermission]
+    feature_code = 'educational-content'
 
     def get(self, request):
         qs = EducationalContent.objects.all()
@@ -97,7 +98,8 @@ class EducationalContentDetailView(APIView):
     GET/PUT/PATCH/DELETE /api/educational-contents/<pk>/
     """
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    permission_classes = [AllowAny]
+    permission_classes = [HasFeaturePermission]
+    feature_code = 'educational-content'
 
     def _get_object(self, pk):
         try:
@@ -166,7 +168,8 @@ class EducationalContentUploadView(APIView):
     Otherwise → returns the file path + url + uuid name (no record created).
     """
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [AllowAny]
+    permission_classes = [HasFeaturePermission]
+    feature_code = 'educational-content'
 
     def post(self, request):
         uploaded = request.FILES.get("file")

@@ -4,7 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from contract.api.responses import success_response
+from contract.rbac import HasFeaturePermission
 from contract.life_long.serializers import LifeLongAgreementSerializer
+from contract.life_long.models import LifeLongAgreement
 
 
 class LifeLongCreateView(APIView):
@@ -13,7 +15,8 @@ class LifeLongCreateView(APIView):
     Accepts both application/json and multipart/form-data.
     """
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasFeaturePermission]
+    feature_code = 'lifelong-learning'
     def post(self, request, *args, **kwargs):
         serializer = LifeLongAgreementSerializer(
             data=request.data,
@@ -27,3 +30,14 @@ class LifeLongCreateView(APIView):
             data=serializer.data,
             status_code=status.HTTP_201_CREATED,
         )
+
+
+class LifeLongListView(APIView):
+    permission_classes = [IsAuthenticated, HasFeaturePermission]
+    feature_code = 'lifelong-learning'
+
+    def get(self, request):
+        agreements = LifeLongAgreement.objects.all().order_by('-pk')
+        data = LifeLongAgreementSerializer(agreements, many=True, context={'request': request}).data
+        return success_response(request=request, code='request.success', data=data,
+                                total_count=len(data), page_size=len(data))

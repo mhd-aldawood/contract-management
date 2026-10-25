@@ -24,6 +24,7 @@ class EducationalContentSerializer(serializers.ModelSerializer):
     estimatedCost     = serializers.DecimalField(source="estimated_cost", max_digits=14, decimal_places=2, required=False)
     startDate         = serializers.DateField(source="start_date", required=False, allow_null=True)
     endDate           = serializers.DateField(source="end_date", required=False, allow_null=True)
+    reminderDate      = FlexibleDateField(source="reminder_date", required=False, allow_null=True)
     paymentMethod     = serializers.CharField(source="payment_method", required=False, allow_blank=True)
     paymentText       = serializers.CharField(source="payment_text", required=False, allow_blank=True)
     quarterlyDue      = serializers.DecimalField(source="quarterly_due", max_digits=14, decimal_places=2, required=False)
@@ -45,7 +46,7 @@ class EducationalContentSerializer(serializers.ModelSerializer):
         fields = [
             "id", "type",
             "agreementNumber", "name", "companyName", "subject",
-            "additionalCourses", "estimatedCost", "startDate", "endDate",
+            "additionalCourses", "estimatedCost", "startDate", "endDate", "reminderDate",
             "paymentMethod", "paymentText", "paymentSchedule", "quarterlyDue",
             "status", "disbursement", "budgetType", "contractText",
             "isHidden", "fileName", "storedName", "fileUrl", "file",

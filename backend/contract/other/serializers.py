@@ -4,6 +4,13 @@ from rest_framework import serializers
 from .models import Agreement, AgreementRow
 
 
+class FlexibleDateField(serializers.DateField):
+    def to_internal_value(self, value):
+        if value in ('', None):
+            return None
+        return super().to_internal_value(value)
+
+
 class AgreementRowSerializer(serializers.ModelSerializer):
     class Meta:
         model = AgreementRow
@@ -14,6 +21,7 @@ class AgreementSerializer(serializers.ModelSerializer):
     agreementNumber = serializers.CharField(source="agreement_number")
     startDate       = serializers.DateField(source="start_date")
     endDate         = serializers.DateField(source="end_date")
+    reminderDate    = FlexibleDateField(source="reminder_date", required=False, allow_null=True)
     isHidden        = serializers.BooleanField(source="is_hidden", required=False)
     fileName        = serializers.CharField(source="file_name", required=False, allow_blank=True)
 
@@ -25,7 +33,7 @@ class AgreementSerializer(serializers.ModelSerializer):
         fields = [
             "id", "type",
             "agreementNumber", "name",
-            "startDate", "endDate", "isHidden",
+            "startDate", "endDate", "reminderDate", "isHidden",
             "rows", "fileName", "file",
         ]
 

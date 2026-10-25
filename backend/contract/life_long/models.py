@@ -24,6 +24,7 @@ class LifeLongAgreement(models.Model):
     # dates
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    reminder_date = models.DateField(null=True, blank=True)
 
     # Payment
     payment_method = models.CharField(

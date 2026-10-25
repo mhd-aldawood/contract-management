@@ -22,6 +22,7 @@ class EducationalContent(models.Model):
     estimated_cost = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    reminder_date = models.DateField(null=True, blank=True)
 
     payment_method = models.CharField(max_length=16, choices=PAYMENT_METHOD_CHOICES, blank=True, default="")
     payment_text = models.TextField(blank=True, default="")

@@ -3,6 +3,13 @@ from rest_framework import serializers
 
 from contract.life_long.models import LifeLongAgreementPaymentRow, LifeLongAgreement
 
+class FlexibleDateField(serializers.DateField):
+    def to_internal_value(self, value):
+        if value in ('', None):
+            return None
+        return super().to_internal_value(value)
+
+
 class PaymentScheduleRowSerializer(serializers.ModelSerializer):
     dueDate = serializers.DateField(
         source='due_date', required=False, allow_null=True
@@ -35,6 +42,7 @@ class LifeLongAgreementSerializer(serializers.ModelSerializer):
     name              = serializers.CharField(source='agreement_name', required=False, allow_blank=True)
     startDate         = serializers.DateField(source='start_date',   required=False, allow_null=True)
     endDate           = serializers.DateField(source='end_date',     required=False, allow_null=True)
+    reminderDate      = FlexibleDateField(source='reminder_date', required=False, allow_null=True)
     paymentMethod     = serializers.CharField(source='payment_method', required=False, allow_blank=True)
     paymentText       = serializers.CharField(source='payment_text',   required=False, allow_blank=True)
     budgetType        = serializers.CharField(source='budget_type',    required=False, allow_blank=True)
@@ -46,7 +54,7 @@ class LifeLongAgreementSerializer(serializers.ModelSerializer):
         # list every wire field you want exposed
         fields = [
              'id', 'type', 'agreementNumber', 'name', 'companyName',
-             'startDate', 'endDate', 'subject',
+             'startDate', 'endDate', 'reminderDate', 'subject',
             'paymentMethod', 'paymentText', 'paymentSchedule',
             'status', 'disbursement', 'budgetType',
             'isHidden', 'fileName', 'file',

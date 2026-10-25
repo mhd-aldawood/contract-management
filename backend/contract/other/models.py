@@ -6,7 +6,7 @@ from contract.helper import UploadToPath
 class Agreement(models.Model):
     TYPE_CHOICES = [
         ("other-agreements", "Other Agreements"),
-        # add your other types here...
+        ("memorandum", "Memorandum"),
     ]
 
     # ---- scalar fields -------------------------------------------------
@@ -20,6 +20,7 @@ class Agreement(models.Model):
 
     start_date = models.DateField()
     end_date = models.DateField()
+    reminder_date = models.DateField(null=True, blank=True)
 
     is_hidden = models.BooleanField(default=False)
 
