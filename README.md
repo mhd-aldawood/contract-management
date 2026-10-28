@@ -234,7 +234,6 @@ DEBUG=False
 ALLOWED_HOSTS=cm-dev.svuonline.edu.sy,cmapi-dev.svuonline.edu.sy,localhost,127.0.0.1
 CSRF_TRUSTED_ORIGINS=https://cm-dev.svuonline.edu.sy,https://cmapi-dev.svuonline.edu.sy
 CORS_ALLOWED_ORIGINS=https://cm-dev.svuonline.edu.sy
-CORS_ALLOW_CREDENTIALS=False
 
 VITE_API_BASE_URL=https://cmapi-dev.svuonline.edu.sy
 ```
@@ -393,8 +392,8 @@ allow public access to application ports.
 | GET, POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/users/` | Admin-only list/filter or create users |
 | PATCH | `https://cmapi-dev.svuonline.edu.sy/api/auth/users/{id}/` | Admin-only update, activate/deactivate, role assignment, or password reset |
 | GET | `https://cmapi-dev.svuonline.edu.sy/api/auth/me/` | Current authenticated user |
-| POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/token/refresh/` | Rotate authenticated token |
-| POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/logout/` | Invalidate token |
+| POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/token/refresh/` | Rotate access token using refresh cookie + CSRF header |
+| POST | `https://cmapi-dev.svuonline.edu.sy/api/auth/logout/` | Revoke the current login session and clear its cookies |
 | GET, POST, PATCH, DELETE | `https://cmapi-dev.svuonline.edu.sy/api/auth/access-control/` | Admin-only role and permission management |
 | GET, POST | `https://cmapi-dev.svuonline.edu.sy/api/educational-contents` | List or create educational content |
 | GET, PUT, PATCH, DELETE | `https://cmapi-dev.svuonline.edu.sy/api/educational-contents/{id}/` | Read or modify one educational-content record |
@@ -464,7 +463,7 @@ errors.
 | `ALLOWED_HOSTS` | Comma-separated public hosts accepted by Django |
 | `CSRF_TRUSTED_ORIGINS` | Trusted full origins, including `https://` |
 | `CORS_ALLOWED_ORIGINS` | Browser origins allowed to read API responses |
-| `CORS_ALLOW_CREDENTIALS` | Whether cross-origin cookies are allowed; normally `False` |
+| `FILE_DOWNLOAD_SIGNING_KEY` | Optional independent server secret for download grants; defaults to a key derived from `SECRET_KEY` |
 | `API_DEFAULT_LANGUAGE` | Fallback API language: `ar` or `en` |
 | `VITE_API_BASE_URL` | API origin without `/api` or trailing slash |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` | PostgreSQL connection and credentials |
@@ -496,10 +495,11 @@ retention policy.
 
 ## Tests and build
 
-Django tests use an isolated SQLite database:
+Django tests default to an isolated SQLite database. For PostgreSQL, including the simultaneous single-use grant regression, run the second command. Both use a separate test database:
 
 ```bash
-docker compose run --rm --entrypoint python backend manage.py test contract
+docker compose run --rm --no-deps --entrypoint python backend manage.py test contract --noinput
+docker compose run --rm --no-deps -e USE_SQLITE_FOR_TESTS=False --entrypoint python backend manage.py test contract --noinput
 ```
 
 Frontend build:
@@ -522,7 +522,7 @@ Select exactly one environment before running the collection. The local
 environment uses `cm.localhost:81` and `cmapi.localhost:81`; the production
 environment uses the two HTTPS SVU hostnames. The collection's service checks
 always pass through the Nginx gateway—none use the containers' diagnostic ports.
-Login stores the token from `response.data.token`.
+Login and Refresh return `response.data.token` plus `csrfToken`. Postman saves both in the selected environment; its cookie jar retains the HttpOnly refresh cookie. Run **Get refresh CSRF token** before **Refresh token** if needed. Keep cookie handling enabled.
 
 ## Troubleshooting
 
@@ -625,6 +625,8 @@ docker compose exec backend python manage.py changepassword cm_demo_admin
 
 #### Test every role
 
+Agreement lists include an **أوامر الصرف** filter (all / with orders / without orders). Beside **عرض التفاصيل**, **عرض أوامر الصرف (N)** opens that agreement's Finance files in a modal; it is disabled for zero active orders. Contract and Planning readers can view related file metadata; downloading additionally requires that page’s Download permission. Hidden agreements remain inaccessible through the Planning viewer. Finance write permissions are still required to add, edit, replace or remove files.
+
 | Account | Dashboard checks | Feature checks |
 | --- | --- | --- |
 | Admin | Confirm agreement totals, active users, roles, Finance order totals, status/type charts and monthly activity. | Open **إدارة النظام → المستخدمون** and **الأدوار والصلاحيات**. Create a temporary user, assign a role, edit the user and test activation/deactivation. Create a custom role and verify its read/write permissions with that role's user. |
@@ -648,6 +650,202 @@ Default demo data, before any tester edits and **in addition to any records alre
 The status counts above apply on the day the examples are created; they change as time passes or dates are edited. The six-month chart includes examples in every month. Admin can change role permissions, so customized access can differ from the defaults in this checklist. All demo agreement numbers start with `DEMO-`; names and downloadable text attachments are clearly labeled as test data.
 
 `seed_demo_data` is a CLI management command, not an API or automatic startup task. It creates 8 clearly labeled examples for each of the 5 agreement types (40 agreements), 60 downloadable Finance order files, agreement attachments and payment/clause examples. Dates include current, future and finished agreements; 10 agreements are hidden from Planning. Creation dates span the last six months so dashboard charts contain data. Existing records and edited demo examples are preserved on reruns. Use `--per-type 5` through `--per-type 10` to choose a different number; no records are removed when reducing the count. Run these demo commands against the designated test database.
+
+## Create Contract — إضافة عقد
+
+Open [إضافة عقد locally](http://cm.localhost:81/contracts/create) from the **العقود → إضافة عقد** sidebar entry. This implements the supplied procurement/tender reference with the application's shared colors, typography, panels, buttons, large responsive modals and RTL layout.
+
+Use **إضافة عقد جديد** to enter the justification memo, technical specifications, legal specifications, announcement start/end dates, reminder date, ordered bid-opening minutes (minute number/date/subject), optional wishes, and the successful/failed tender result. Add/remove minutes and wishes dynamically. Blank placeholder minutes are ignored; a partly completed minute must be completed before saving. Dates are calendar dates, and the announcement end cannot precede its start.
+
+The list supports search, status filtering, pagination, details, editing and deletion confirmation. Entries persist in PostgreSQL and survive reloads. The reminder date is saved and displayed, including for failed tenders. Changing the draft status does not immediately destroy entered rows; saving **فشلت المناقصة** clears announcement dates, minutes and wishes on the server while preserving the memo, specifications and reminder. Failed tenders can therefore be saved without announcement dates, correcting the contradictory required-date behavior in the reference. Deletion removes the entry from normal lists/access while retaining it internally as a deleted record.
+
+This is a separate procurement-entry feature, not a new signed-agreement type. Its **contract-requests** permission appears in Roles: Admin/Contracts receive Read/Write; Dean/Planning/Finance receive Read by default. Custom roles need explicit permission. Every API read/write/delete is checked server-side. The reference's specifications fields remain text; no document URLs or client-only browser persistence are introduced.
+
+| Method | API |
+| --- | --- |
+| GET / POST | `/api/contract-requests/` |
+| GET / PATCH / PUT / DELETE | `/api/contract-requests/<id>/` |
+
+List queries accept `q` and `status=success|failed`. Nested `bids` contain `number`, `date` and `subject`; `wishes` is a JSON string array. Requests are JSON, including nested arrays. The Postman **Create Contract - إضافة عقد** folder contains creation, filter, details, update-to-failed, delete and deleted-record checks. Migrations `0018` and `0019` create storage and missing role permissions on backend startup.
+
+The regression suite includes persistence, date/required-field validation, minute/wish limits, transitions between results, filtering without duplicated records, deletion visibility, role restrictions and constant list-query counts. All 115 PostgreSQL tests passed; live desktop/mobile checks covered creation, editing, deletion/retry, filtering and all five roles. The local Postman smoke passed 8 requests and 10 assertions with cloud reporting disabled. `frontend/tests/contract-requests.browser.mjs` tests the live local Docker UI at desktop/phone sizes and all five roles, then removes only its own temporary records. It uses the same temporary credentials-file and Playwright setup documented below.
+
+## Doctoral contracts — عقد الدكتوراه
+
+The sidebar places **عقد الدكتوراه** immediately below **المحتوى التعليمي**. Open [the local doctoral contracts screen](http://cm.localhost:81/contracts/doctoral-contracts), then **إضافة عقد** to open its responsive form. The list supports search, details, Finance-order viewing and CSV export.
+
+Required fields: **رقم العقد، اسم الدكتور، المهام، رتبة الدكتور، مدة العقد، أمر المباشرة**. Rank and duration are free text, for example `أستاذ مساعد` and `سنة دراسية واحدة`. **إرفاق الوثيقة** accepts an optional PDF, Word, image, TXT or Excel document up to 19 MiB. Contract numbers must be unique. Attachments use the existing private, permission-checked, single-use download protocol; storage paths are not exposed.
+
+The new `doctoral-contracts` feature has independent Read, Write and Download permissions in Roles. Defaults: Admin/Contracts can create and update; Dean/Finance/Planning can read and download. Custom roles need an explicit grant. The contract also participates in Planning visibility, Dean review, Finance order management and dashboard type counts. The entered duration remains text; no dates are invented from it. Use **إخفاء العقد عن التخطيط** or the Dean visibility control to hide a contract from Planning.
+
+| Method | API |
+| --- | --- |
+| GET / POST | `/api/doctoral-contracts/` |
+| GET / PATCH / PUT | `/api/doctoral-contracts/<id>/` |
+| POST | `/api/files/grants/` with `kind: "doctoral-contracts"` |
+
+JSON creation example (send the file with the same fields as multipart when attaching a document):
+
+```json
+{
+  "contractNumber": "PHD-001",
+  "doctorName": "الدكتور أحمد",
+  "tasks": "الإشراف على الرسائل وتدريس المقررات",
+  "doctorRank": "أستاذ مساعد",
+  "duration": "سنة دراسية واحدة",
+  "commencementOrder": "أمر مباشرة رقم 12",
+  "isHidden": false
+}
+```
+
+Rebuild backend/frontend and reload Nginx using the deployment commands below. Startup applies migrations `0016` and `0017`, creates the doctoral-contract table and Finance relation, and seeds missing role permissions without resetting existing permissions. `seed_demo_data` continues to seed its original five agreement types and does not insert doctoral contracts automatically. Postman includes a **Doctoral Contracts** folder with JSON/multipart creation, listing, details, update and protected download requests.
+
+Regression coverage includes required fields, duplicate contract numbers, attachment validation, role restrictions, private downloads, updates, Planning hiding, Dean details, Finance scoping and dashboards. All 105 backend tests passed on local Docker PostgreSQL; the live doctoral browser checks passed at 1440px and 390px and verified access for all five roles. `frontend/tests/doctoral.browser.mjs` uses the temporary credentials file described below to test the live local screen at desktop/phone sizes and all five roles; it removes only its own temporary contracts and documents afterward.
+
+## Planning columns and text/table costs
+
+`/planning` includes **تفاصيل العمل، حالة الاتفاقية، التكلفة، تفاصيل التكلفة، نوع الاتفاقية**, alongside the existing dates, date-based phase and actions. Work details use the saved subject/contract text or agreement clauses. The agreement's saved status is shown separately from its date-based phase; types without a saved status use the phase label. The type column identifies the agreement category.
+
+The existing **نص / جدول** choice controls the cost cell. Text is shown directly; otherwise an available estimated value is formatted, including zero. Selecting Table displays **إظهار الجدول**, opening only that agreement's rows in a responsive modal with **عدد السنوات / النسبة / تفاصيل**. Switching documents never reuses another agreement's rows. CSV export includes the new Planning columns and the selected agreement's actual cost rows.
+
+The entry table now uses those same three columns for all five agreement types. Use **إضافة صف** to add rows and enter a percentage from 0 to 100, with up to two decimal places. Years accepts descriptive text such as `أول 5 سنوات`. Empty/invalid tables cannot be saved; each agreement stores its own rows. This uses the existing text/table choice, without an additional independent selector. Other agreements and memoranda also expose this choice in their Cost section.
+
+API JSON example:
+
+```json
+{
+  "paymentMethod": "table",
+  "costTable": [
+    { "years": "أول 5 سنوات", "percentage": "40.00", "details": "حصة الجامعة" },
+    { "years": "ثاني 3 سنوات", "percentage": "60.00", "details": "حصة الجهة" }
+  ]
+}
+```
+
+For text, send `paymentMethod: "text"`, `paymentText` and `costTable: []`. Multipart requests send `costTable` as a JSON string. The normal agreement create/read/update endpoints and `GET /api/planning/agreements/` include these fields; the Postman examples are updated. Migration `0015` adds per-agreement storage and preserves existing records. Previously saved `paymentSchedule` rows retain their amounts and due dates: Planning opens them as a clearly labeled legacy payment table, without converting money into percentages. No shared dummy cost data is used.
+
+Regression commands:
+
+```bash
+node --test frontend/tests/contractDates.test.js frontend/tests/agreementCosts.test.js
+node frontend/tests/planning-costs.browser.mjs
+docker compose run --rm --no-deps -e USE_SQLITE_FOR_TESTS=False --entrypoint python backend manage.py test contract --noinput
+```
+
+The cost browser regression passed the new columns, text/table selection, isolation between agreements, legacy and empty tables, percentage bounds and multipart submission for all five forms at desktop and phone sizes. A live local-Docker check also created agreements of all five types, saved their cost tables to PostgreSQL and displayed their own rows in Planning; those temporary records were removed afterward. Use the Playwright/Chrome environment variables documented below.
+
+## Download-only files and secure login sessions
+
+Agreement attachments and Finance orders now use **تنزيل** only. Details no longer open raw file links in another tab. API responses return `hasFile` and the original filename instead of a public storage path. All Nginx `/media/` routes and Django direct media access return 404, including old agreement links. Existing uploaded files remain in the media volume.
+
+### Admin configuration
+
+Open **إدارة النظام → الأدوار والصلاحيات** at `/admin/roles`, select a role, and set **قراءة / كتابة / تنزيل** per feature. Read is required for Download; Write and Download are independent. Removing Read removes both other permissions. Download is available for all six document types, Planning, Finance and Dean. The screen containing the action determines its permission: a Planning download uses Planning permissions, for example. Planning cannot download hidden agreements, even by changing the requested scope.
+
+Built-in roles receive Download for file features they could already read during this upgrade. Existing custom roles start without Download until Admin grants it. Admin retains full access. Later `seed_roles` runs preserve configured permissions.
+
+Open **إدارة النظام → الأمان والجلسات** at `/admin/security` to change the central database settings:
+
+| Setting | Default | Allowed values |
+| --- | ---: | --- |
+| Download grant lifetime | 60 seconds | 5–3600 seconds |
+| Access token lifetime | 15 minutes | 1–60 minutes |
+| Normal login session | 8 hours | 1–168 hours |
+| Remember Me session | 7 days | 1–90 days |
+| Allow Remember Me | Enabled | Enabled / disabled |
+
+These durations are configured in this page, not duplicated across `.env`, Docker Compose and Vue. Shorter settings also constrain existing sessions and grants; increasing a setting does not extend an already issued absolute session or grant. Non-admins cannot open or call Security Settings.
+
+### Download protocol
+
+1. With a valid login access token, send JSON to `POST /api/files/grants/`:
+
+   ```json
+   {
+     "kind": "nafath-centers",
+     "agreementId": 1,
+     "scope": "agreement",
+     "orderId": null
+   }
+   ```
+
+2. Use the returned `grant` in `X-Download-Grant` and the login token in `Authorization: Token ...` when calling `GET /api/files/download/`. To download an order, set `orderId` to that order's ID. Allowed scopes are `agreement`, `planning`, `finance` and `dean`; the server checks the corresponding permissions.
+3. The grant is signed, expires after the configured duration, and is bound to the user’s current login session and the selected file/version. It can start **one** download. It is consumed when the authorized server request opens the file; expiry does not interrupt a transfer already started. Another click requests a fresh grant.
+
+The ticket is sent in a header, never in the URL. The response is an attachment with `application/octet-stream`, `nosniff` and `private, no-store`. Legacy Finance/Dean/agreement-order file endpoints also require a matching grant. Permission, account state, password/session revocation, hidden state, removal and file version are checked again when downloading. A downloaded local copy cannot be revoked by expiring its grant.
+
+| Response | Meaning / next step |
+| --- | --- |
+| 400 | Invalid JSON fields or settings; correct the form |
+| 401 | Missing/expired/revoked login; renew the session or sign in |
+| 403 | Missing Download permission, invalid/mismatched grant, or failed refresh CSRF/origin check |
+| 404 | Missing/removed file, wrong document type/order, hidden Planning document or blocked public media link |
+| 409 | Grant already used or file changed; click Download again for a fresh grant |
+| 410 | Grant expired; click Download again |
+| 429 | Five failed sign-in attempts triggered the 15-minute username lockout |
+
+### Login changes and deployment
+
+Access tokens and the current user are held in Vue memory, not `localStorage` or `sessionStorage`. Old browser authentication/password-cache keys are removed on startup. The app restores a valid session after reload through a rotating HttpOnly refresh cookie and automatically retries an API request once after access expiry. Normal login cookies last for the browser session, bounded by the configured server session duration. **تذكرني على هذا الجهاز** enables a persistent cookie, bounded by Remember Me settings. The server stores only token hashes.
+
+Refresh requires both its cookie and the `X-Refresh-CSRF` header, obtained from Login or `GET /api/auth/csrf/`; untrusted browser origins are rejected. Logout revokes the current session. Password changes revoke all previous sessions and issue a new current session; Admin password reset and account deactivation revoke the user's sessions. New users still must change their generated temporary password before accessing features. Incorrect login, malformed input and expired sessions return the standard API error response.
+
+Refresh cookies use `HttpOnly`, `SameSite=Lax`, host-only scope and `/api/auth/`. HTTPS requests receive `Secure` cookies. Keep the native TLS proxy's `Host` and `X-Forwarded-Proto` forwarding correct. Django explicitly allows credentialed CORS for the configured origins; the old `CORS_ALLOW_CREDENTIALS` environment switch is obsolete and is ignored. Preflight allows `Authorization`, `Content-Type`, `X-Refresh-CSRF` and `X-Download-Grant`; an external proxy must preserve these responses and headers.
+
+Local Docker uses the dashboard's same-origin `/api/` gateway so `.localhost` cookie site rules do not break reloads. Ports remain unchanged. Use [local login](http://cm.localhost:81/login), [Admin security settings](http://cm.localhost:81/admin/security), or `http://localhost:81`. Direct frontend access on `:8081` also proxies `/api/`. Vite development/preview proxies `/api/` to the local gateway on port 81. Production continues to use `VITE_API_BASE_URL` and the configured HTTPS API origin.
+
+Deploy backend, frontend and Nginx together:
+
+```bash
+docker compose build backend frontend
+docker compose up -d backend frontend nginx
+docker compose exec nginx nginx -t
+docker compose exec nginx nginx -s reload
+docker compose ps
+```
+
+Backend startup applies migrations `0013` and `0014` and seeds missing role permissions. **All legacy login tokens are invalidated once by this upgrade; sign in again after updating.** User passwords and uploaded documents are preserved. Refresh the browser with Ctrl+F5 to load the new frontend. No Docker Compose port changes are needed.
+
+Keep `SECRET_KEY` stable and secret. Optionally set one independent `FILE_DOWNLOAD_SIGNING_KEY` in the existing backend environment; otherwise it derives a separate signing key from `SECRET_KEY`. Rotating the download key invalidates outstanding grants. Never place signing keys in Vue, Postman or URLs.
+
+### Postman and regressions
+
+The collection includes **Secure Downloads and Security Settings**, JSON grant requests, attachment download, a reused-grant check, Admin settings and cookie/CSRF refresh steps. Run Login, choose an existing document and scope, issue a grant, then **Download once (Send and Download)**. Run the reused-grant request immediately afterward to expect 409. Keep Postman cookies enabled. New sign-ins, refresh and password-change requests update both `token` and `csrf_token` in the selected local/production environment.
+
+The Docker regression suite covers login for all roles, malformed/incorrect/disabled login, lockout, secure-cookie flags, session/access expiry, refresh rotation/replay, CSRF/origin/CORS, logout, password change/reset, deactivation, Admin settings validation, Read/Write/Download separation, all six document types and their Finance orders, expired/tampered/reused/wrong-session tickets, hidden/removed/replaced/missing files, signing-key rotation, public-path protection and simultaneous use of one grant. PostgreSQL execution runs the race test; SQLite skips that one test.
+
+```bash
+docker compose run --rm --no-deps -e USE_SQLITE_FOR_TESTS=False --entrypoint python backend manage.py test contract --noinput
+npm run test:planning --prefix frontend
+```
+
+After local Docker is healthy, browser tests can use an installed `playwright` package and Chrome. Override `PLAYWRIGHT_MODULE` and `CHROME_PATH` when using another installation. For live tests, set `DASHBOARD_TEST_ACCOUNTS` to a temporary JSON file containing the five seeded account credentials as `{ "role": "admin", "username": "...", "password": "..." }` objects. Do not commit this file; remove it after testing. Use the passwords generated in your own environment.
+
+```powershell
+$env:DASHBOARD_TEST_URL = 'http://cm.localhost:81'
+$env:ORDER_TEST_URL = 'http://cm.localhost:81'
+$env:MODAL_TEST_URL = 'http://cm.localhost:81'
+$env:DASHBOARD_TEST_ACCOUNTS = 'C:/path/outside/repository/test-accounts.json'
+node frontend/tests/dashboard.browser.mjs
+node frontend/tests/security.browser.mjs
+node frontend/tests/agreement-orders.browser.mjs
+node frontend/tests/modal-layout.browser.mjs
+```
+
+`dashboard.browser.mjs` tests real Admin, Dean, Finance, Contracts and Planning logins at desktop/phone sizes, live charts/navigation, reload renewal, absence of stored credentials, private cookies, protected downloads, reused-grant rejection and logout. `security.browser.mjs` is local-only: it creates one temporary user, verifies first-login password change and mismatch handling, expires only its own access token to check automatic renewal, verifies Admin-page denial and deactivation redirect, then deletes only that temporary user through local Docker. The other browser suites mock API data and cover attachment/order actions, error/retry/empty states and 80 responsive modal checks without modifying agreements.
+
+Verified locally on 2026-10-28 with the rebuilt Docker app:
+
+| Check | Result |
+| --- | --- |
+| Django regression suite on PostgreSQL | 115 tests passed, including contract requests, doctoral contracts, cost-table persistence and simultaneous grant consumption |
+| Live role/browser checks | All 5 roles passed at 1440px and 390px |
+| First-login / password / expiry / deactivation workflow | Passed; temporary account removed afterward |
+| Agreement and Finance-order browser checks | 16 page checks passed, including attachment downloads |
+| Responsive agreement/user/role modals | 80 checks passed at 5 viewport sizes |
+| Damascus date/filter and cost-display unit tests | 7 passed |
+| Updated Postman local security smoke | 10 requests and 9 assertions passed; cloud reporting disabled |
+| Docker builds, Django checks/migrations, Nginx configuration | Passed; local services healthy |
 
 ## Production security checklist
 

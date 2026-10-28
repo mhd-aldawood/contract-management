@@ -2,221 +2,128 @@
   "info": {
     "_postman_id": "663e814e-7de0-4dc5-9b8b-d4103a962c4d",
     "name": "Contract Management API",
-    "description": "API and Nginx gateway checks for Contract Management. Select the Local or Production Postman environment, then run Login first to populate that environment's token. User accounts are created only by administrators through User Management.",
+    "description": "API and Nginx gateway checks for Contract Management. Select the Local or Production Postman environment, then run Login first to populate that environment's token. User accounts are created only by administrators through User Management. Download-only security: grant + authenticated download, rotating cookie sessions and Admin security settings. Access tokens expire; Refresh uses the Postman cookie jar and X-Refresh-CSRF. All structured bodies are JSON.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
     "type": "apikey",
     "apikey": [
-      { "key": "value", "value": "Token {{token}}", "type": "string" },
-      { "key": "key", "value": "Authorization", "type": "string" },
-      { "key": "in", "value": "header", "type": "string" }
+      {
+        "key": "value",
+        "value": "Token {{token}}",
+        "type": "string"
+      },
+      {
+        "key": "key",
+        "value": "Authorization",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
     ]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://cmapi.localhost:81" },
-    { "key": "dashboardUrl", "value": "http://cm.localhost:81" },
-    { "key": "localBaseUrl", "value": "http://cmapi.localhost:81" },
-    { "key": "productionBaseUrl", "value": "https://cmapi-dev.svuonline.edu.sy" },
-    { "key": "username", "value": "postman_user" },
-    { "key": "email", "value": "postman@example.com" },
-    { "key": "password", "value": "PostmanTest123!" },
-    { "key": "token", "value": "" },
-    { "key": "educational_content_id", "value": "1" },
-    { "key": "managed_user_id", "value": "1" },
-    { "key": "managed_username", "value": "managed_user" },
-    { "key": "temporary_password", "value": "" },
-    { "key": "finance_agreement_type", "value": "nafath-centers" },
-    { "key": "finance_agreement_id", "value": "1" },
-    { "key": "disbursement_order_id", "value": "1" },
-    { "key": "dean_agreement_type", "value": "nafath-centers" },
-    { "key": "dean_agreement_id", "value": "1" },
-    { "key": "dean_order_id", "value": "1" }
+    {
+      "key": "baseUrl",
+      "value": "http://cmapi.localhost:81"
+    },
+    {
+      "key": "dashboardUrl",
+      "value": "http://cm.localhost:81"
+    },
+    {
+      "key": "localBaseUrl",
+      "value": "http://cmapi.localhost:81"
+    },
+    {
+      "key": "productionBaseUrl",
+      "value": "https://cmapi-dev.svuonline.edu.sy"
+    },
+    {
+      "key": "username",
+      "value": "postman_user"
+    },
+    {
+      "key": "email",
+      "value": "postman@example.com"
+    },
+    {
+      "key": "password",
+      "value": "PostmanTest123!"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "educational_content_id",
+      "value": "1"
+    },
+    {
+      "key": "managed_user_id",
+      "value": "1"
+    },
+    {
+      "key": "managed_username",
+      "value": "managed_user"
+    },
+    {
+      "key": "temporary_password",
+      "value": ""
+    },
+    {
+      "key": "finance_agreement_type",
+      "value": "nafath-centers"
+    },
+    {
+      "key": "finance_agreement_id",
+      "value": "1"
+    },
+    {
+      "key": "disbursement_order_id",
+      "value": "1"
+    },
+    {
+      "key": "dean_agreement_type",
+      "value": "nafath-centers"
+    },
+    {
+      "key": "dean_agreement_id",
+      "value": "1"
+    },
+    {
+      "key": "dean_order_id",
+      "value": "1"
+    },
+    {
+      "key": "agreement_order_scope",
+      "value": "agreement"
+    },
+    {
+      "key": "csrf_token",
+      "value": ""
+    },
+    {
+      "key": "download_grant",
+      "value": ""
+    },
+    {
+      "key": "download_scope",
+      "value": "agreement"
+    },
+    {
+      "key": "doctoral_contract_id",
+      "value": ""
+    },
+    {
+      "key": "contract_request_id",
+      "value": ""
+    }
   ],
   "item": [
-    {
-      "name": "Dashboard - Role and permission scoped metrics",
-      "description": "Login as each role, then request the dashboard. Home read permission is required. Planning excludes hidden agreements. Finance metrics require Finance or Dean access. User counts are aggregate-only for Dean; user management remains Admin-only. No sample metrics are generated.",
-      "item": [{
-        "name": "Get my live dashboard",
-        "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/dashboard/" },
-        "event": [{ "listen": "test", "script": { "exec": [
-          "pm.test('Dashboard loads', () => pm.response.to.have.status(200));",
-          "const dashboard = pm.response.json().data;",
-          "pm.test('Counts are numeric and months are bounded', () => { pm.expect(dashboard.agreements.total).to.be.a('number'); pm.expect(dashboard.charts.monthly).to.have.lengthOf(6); });",
-          "if (dashboard.mode === 'planning') pm.test('Planning visibility enforced', () => { pm.expect(dashboard.agreements.hidden).to.eql(0); pm.expect(dashboard.recentAgreements.every(item => !item.isHidden)).to.eql(true); });"
-        ] } }]
-      }]
-    },
-    {
-      "name": "Dean - Agreement review and Planning visibility",
-      "description": "Login as Admin or Dean. Dean read permission lists every agreement, including hidden records, and reads details and Finance order files. Dean write permission changes only Planning visibility. Showing or hiding a document changes the next Planning list response. List and detail requests select the first available document and order; choose another ID as needed.",
-      "item": [
-        {
-          "name": "List all agreements including hidden",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/dean/agreements/" },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Dean list loads', () => pm.response.to.have.status(200));",
-            "const first = pm.response.json().data?.[0]; if (first) { pm.environment.set('dean_agreement_type', first.feature); pm.environment.set('dean_agreement_id', first.id); }"
-          ] } }]
-        },
-        {
-          "name": "Read agreement details and active Finance orders",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/" },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Dean details load', () => pm.response.to.have.status(200));",
-            "const first = pm.response.json().data?.orders?.[0]; if (first) pm.environment.set('dean_order_id', first.id);"
-          ] } }]
-        },
-        {
-          "name": "Show agreement in Planning",
-          "request": {
-            "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/visibility/",
-            "body": { "mode": "raw", "raw": "{\n  \"isHidden\": false\n}", "options": { "raw": { "language": "json" } } }
-          },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Agreement shown', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.isHidden).to.eql(false); });"
-          ] } }]
-        },
-        {
-          "name": "Hide agreement from Planning",
-          "request": {
-            "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/visibility/",
-            "body": { "mode": "raw", "raw": "{\n  \"isHidden\": true\n}", "options": { "raw": { "language": "json" } } }
-          },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Agreement hidden', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.isHidden).to.eql(true); });"
-          ] } }]
-        },
-        {
-          "name": "Download Finance order with Dean permission",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/orders/{{dean_order_id}}/file/" }
-        }
-      ]
-    },
-    {
-      "name": "Finance - Disbursement orders",
-      "description": "Finance read permission lists agreements and downloads files. Finance write permission adds, replaces, or removes orders. Select actual files in multipart requests; do not manually set Content-Type. Hidden agreements remain available to Finance.",
-      "item": [
-        {
-          "name": "List agreements and order counts",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/finance/agreements/" },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Finance list loads', () => pm.response.to.have.status(200));",
-            "const first = pm.response.json().data?.[0]; if (first) { pm.environment.set('finance_agreement_type', first.feature); pm.environment.set('finance_agreement_id', first.id); }"
-          ] } }]
-        },
-        {
-          "name": "List agreement disbursement orders",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/" },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Orders list loads', () => pm.response.to.have.status(200));",
-            "const first = pm.response.json().data?.[0]; if (first) pm.environment.set('disbursement_order_id', first.id);"
-          ] } }]
-        },
-        {
-          "name": "Upload one or more disbursement orders",
-          "request": {
-            "method": "POST", "header": [],
-            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/",
-            "description": "Select one or multiple files under files. Up to 20 files / 19 MiB total; PDF, PNG, JPG, JPEG, DOC, DOCX, XLS, XLSX, TXT.",
-            "body": { "mode": "formdata", "formdata": [{ "key": "files", "type": "file", "src": [] }] }
-          },
-          "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('Orders uploaded', () => pm.response.to.have.status(201));",
-            "const first = pm.response.json().data?.[0]; if (first) pm.environment.set('disbursement_order_id', first.id);"
-          ] } }]
-        },
-        {
-          "name": "Edit selected order name and notes",
-          "request": {
-            "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/",
-            "body": { "mode": "raw", "raw": "{\n  \"title\": \"أمر الصرف الأول\",\n  \"notes\": \"ملاحظات المالية\"\n}", "options": { "raw": { "language": "json" } } }
-          }
-        },
-        {
-          "name": "Replace selected order file",
-          "request": {
-            "method": "PATCH", "header": [],
-            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/",
-            "description": "Replaces this order's file, retaining its ID. Other orders are unchanged.",
-            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] }
-          }
-        },
-        {
-          "name": "Download selected order (authenticated)",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/file/" }
-        },
-        {
-          "name": "Remove selected order",
-          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/" }
-        }
-      ]
-    },
-    {
-      "name": "Nginx service checks",
-      "item": [
-        {
-          "name": "API gateway health",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/healthz",
-            "description": "Checks the API hostname through the Nginx gateway."
-          },
-          "event": [{
-            "listen": "test",
-            "script": { "exec": ["pm.test('Gateway is healthy', () => pm.response.to.have.status(200));"] }
-          }]
-        },
-        {
-          "name": "Dashboard gateway health",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": "{{dashboardUrl}}/health",
-            "description": "Checks the dashboard hostname through the Nginx gateway."
-          },
-          "event": [{
-            "listen": "test",
-            "script": { "exec": ["pm.test('Dashboard is healthy', () => pm.response.to.have.status(200));"] }
-          }]
-        },
-        {
-          "name": "Dashboard home through Nginx",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": "{{dashboardUrl}}/",
-            "description": "Confirms the dashboard hostname is routed to Vue."
-          },
-          "event": [{
-            "listen": "test",
-            "script": { "exec": ["pm.test('Dashboard is reachable', () => pm.response.to.have.status(200));"] }
-          }]
-        },
-        {
-          "name": "Django admin through Nginx",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/admin/login/",
-            "description": "Confirms the API hostname is routed to Django."
-          },
-          "event": [{
-            "listen": "test",
-            "script": { "exec": ["pm.test('Django admin is reachable', () => pm.response.to.have.status(200));"] }
-          }]
-        }
-      ]
-    },
     {
       "name": "Authentication",
       "item": [
@@ -226,49 +133,1120 @@
             {
               "listen": "prerequest",
               "script": {
-                "exec": ["pm.request.headers.remove('Authorization');"]
+                "exec": [
+                  "pm.request.headers.remove('Authorization');"
+                ]
               }
             },
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
-                  "const data = pm.response.json();",
-                  "if (data.data?.token) pm.environment.set('token', data.data.token);"
+                  "pm.test('Session request succeeds', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "if (data?.token) pm.environment.set('token', data.token);",
+                  "if (data?.csrfToken) pm.environment.set('csrf_token', data.csrfToken);"
                 ]
               }
             }
           ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"rememberMe\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/login/"
           }
         },
         {
           "name": "Current user",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/auth/me/" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me/"
+          }
+        },
+        {
+          "name": "Get refresh CSRF token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/csrf/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CSRF loads', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('csrf_token', pm.response.json().data.csrfToken);"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Refresh token",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Token rotated', () => pm.response.to.have.status(200));",
-                "const data = pm.response.json();",
-                "if (data.data?.key) pm.environment.set('token', data.data.key);"
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Session request succeeds', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "if (data?.token) pm.environment.set('token', data.token);",
+                  "if (data?.csrfToken) pm.environment.set('csrf_token', data.csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Refresh-CSRF",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/token/refresh/",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Contract - إضافة عقد",
+      "description": "Reference-based procurement entry at /contracts/create. Login as Admin/Contracts to create, update or delete. Dean/Planning/Finance are read-only by default. Failed status clears announcement dates, bid minutes and wishes while retaining the reminder and core texts. Every structured request body is JSON.",
+      "item": [
+        {
+          "name": "Create contract request",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/contract-requests/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"justificationMemo\": \"طلب عقد تجريبي - {{$guid}}\",\n  \"technicalSpecs\": \"دفتر الشروط الفني\",\n  \"legalSpecs\": \"دفتر الشروط الحقوقي\",\n  \"announceStart\": \"2026-11-01\",\n  \"announceEnd\": \"2026-11-15\",\n  \"reminderDate\": \"2026-11-03\",\n  \"status\": \"success\",\n  \"bids\": [\n    {\n      \"number\": \"M-001\",\n      \"date\": \"2026-11-02\",\n      \"subject\": \"محضر فض العروض\"\n    }\n  ],\n  \"wishes\": [\n    \"الرغبة الأولى\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Contract created', () => pm.response.to.have.status(201));",
+                  "const doc = pm.response.json().data; if (doc?.id) pm.environment.set('contract_request_id', doc.id);",
+                  "pm.test('Reminder and ordered minutes persist', () => { pm.expect(doc.reminderDate).to.eql('2026-11-03'); pm.expect(doc.bids).to.have.lengthOf(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List successful contract requests",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/contract-requests/?status=success",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Success filter works', () => { pm.response.to.have.status(200); pm.response.json().data.forEach(doc => pm.expect(doc.status).to.eql('success')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read contract request",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/contract-requests/{{contract_request_id}}/",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Contract details load', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update contract request to failed",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/contract-requests/{{contract_request_id}}/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"failed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Failed status saved', () => pm.response.to.have.status(200));",
+                  "const doc = pm.response.json().data; pm.test('Dependent fields clear, reminder remains', () => { pm.expect(doc.announceStart).to.eql(null); pm.expect(doc.announceEnd).to.eql(null); pm.expect(doc.bids).to.eql([]); pm.expect(doc.wishes).to.eql([]); pm.expect(doc.reminderDate).to.eql('2026-11-03'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete selected contract request",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/contract-requests/{{contract_request_id}}/",
+            "header": [],
+            "description": "Deletes the record selected by contract_request_id. Run Create first when testing."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Selected request deleted', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify deleted request is inaccessible",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/contract-requests/{{contract_request_id}}/",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Deleted request returns 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctoral Contracts - عقد الدكتوراه",
+      "description": "Available below Educational Content. Admin/Contracts can create/update; seeded reader roles can list/read/download. File downloads require the existing single-use grant. Enter a document in the multipart request before running it; JSON creation may omit the attachment.",
+      "item": [
+        {
+          "name": "List doctoral contracts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/doctoral-contracts/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List succeeds', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().data?.[0]; if (first) pm.environment.set('doctoral_contract_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create doctoral contract (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/doctoral-contracts/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractNumber\": \"PHD-JSON-{{$timestamp}}\",\n  \"doctorName\": \"الدكتور أحمد\",\n  \"tasks\": \"الإشراف على الرسائل وتدريس المقررات\",\n  \"doctorRank\": \"أستاذ مساعد\",\n  \"duration\": \"سنة دراسية واحدة\",\n  \"commencementOrder\": \"أمر مباشرة رقم 12\",\n  \"isHidden\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Doctoral contract created', () => pm.response.to.have.status(201));",
+                  "const doc = pm.response.json().data; if (doc?.id) pm.environment.set('doctoral_contract_id', doc.id);",
+                  "pm.test('No public storage path', () => pm.expect(JSON.stringify(doc)).not.to.include('/media/'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create doctoral contract with document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/doctoral-contracts/",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "contractNumber",
+                  "value": "PHD-FILE-{{$timestamp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "doctorName",
+                  "value": "الدكتور أحمد",
+                  "type": "text"
+                },
+                {
+                  "key": "tasks",
+                  "value": "الإشراف على الرسائل وتدريس المقررات",
+                  "type": "text"
+                },
+                {
+                  "key": "doctorRank",
+                  "value": "أستاذ مساعد",
+                  "type": "text"
+                },
+                {
+                  "key": "duration",
+                  "value": "سنة دراسية واحدة",
+                  "type": "text"
+                },
+                {
+                  "key": "commencementOrder",
+                  "value": "أمر مباشرة رقم 12",
+                  "type": "text"
+                },
+                {
+                  "key": "isHidden",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
               ]
             }
-          }],
-          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/auth/token/refresh/" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Doctoral contract created', () => pm.response.to.have.status(201));",
+                  "const doc = pm.response.json().data; if (doc?.id) pm.environment.set('doctoral_contract_id', doc.id);",
+                  "pm.test('No public storage path', () => pm.expect(JSON.stringify(doc)).not.to.include('/media/'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read doctoral contract",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/doctoral-contracts/{{doctoral_contract_id}}/"
+          }
+        },
+        {
+          "name": "Update doctoral contract",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/doctoral-contracts/{{doctoral_contract_id}}/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tasks\": \"مهام محدثة للعقد\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Issue doctoral document grant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/files/grants/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"doctoral-contracts\",\n  \"agreementId\": \"{{doctoral_contract_id}}\",\n  \"scope\": \"agreement\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Download grant created', () => pm.response.to.have.status(200));",
+                  "const grant = pm.response.json().data?.grant; if (grant) pm.environment.set('download_grant', grant);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download doctoral document once",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Download-Grant",
+                "value": "{{download_grant}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/files/download/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planning - Cost table display",
+      "description": "Planning includes costTable for each visible agreement. paymentMethod=text displays paymentText. paymentMethod=table opens the selected agreement's years/percentage/details rows. Legacy dated payment schedules remain available without conversion.",
+      "item": [
+        {
+          "name": "Planning cost rows",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planning/agreements/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Planning loads', () => pm.response.to.have.status(200));",
+                  "pm.test('Per-document cost tables and visibility', () => pm.response.json().data.forEach(item => { pm.expect(item.isHidden).to.eql(false); pm.expect(item.costTable).to.be.an('array'); }));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Secure Downloads and Security Settings",
+      "description": "Run Login first. Choose finance_agreement_type/id, order id and download_scope. Read and Download permissions are both required. A grant is session-bound and single-use, default 60 seconds. Keep Postman cookies enabled. No preview or public media URLs are supported.",
+      "item": [
+        {
+          "name": "Issue agreement attachment grant",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/files/grants/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"{{finance_agreement_type}}\",\n  \"agreementId\": \"{{finance_agreement_id}}\",\n  \"scope\": \"{{download_scope}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Grant created', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data; pm.environment.set('download_grant', data.grant);",
+                  "pm.test('No storage path in response', () => pm.expect(JSON.stringify(data)).not.to.include('/media/')); "
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Issue Finance order grant",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/files/grants/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"{{finance_agreement_type}}\",\n  \"agreementId\": \"{{finance_agreement_id}}\",\n  \"scope\": \"{{download_scope}}\",\n  \"orderId\": \"{{disbursement_order_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Grant created', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data; pm.environment.set('download_grant', data.grant);",
+                  "pm.test('No storage path in response', () => pm.expect(JSON.stringify(data)).not.to.include('/media/')); "
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download once (Send and Download)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/files/download/",
+            "header": [
+              {
+                "key": "X-Download-Grant",
+                "value": "{{download_grant}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Attachment received', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment;'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject reused grant (run immediately after download)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/files/download/",
+            "header": [
+              {
+                "key": "X-Download-Grant",
+                "value": "{{download_grant}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Grant cannot be reused', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get security settings (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/security-settings/",
+            "header": []
+          },
+          "event": []
+        },
+        {
+          "name": "Update security settings (Admin)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/security-settings/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"downloadSeconds\": 60,\n  \"accessMinutes\": 15,\n  \"sessionHours\": 8,\n  \"rememberDays\": 7,\n  \"allowRemember\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": []
+        }
+      ]
+    },
+    {
+      "name": "Agreements - Related Finance order viewer",
+      "description": "Agreement list responses include orderCount for active files only. All agreement, Planning, Finance and Dean list endpoints accept hasOrders=true or hasOrders=false. These read endpoints reuse finance_agreement_type/id and disbursement_order_id. scope=agreement requires read access to that agreement type; scope=planning requires Planning read and a visible agreement; scope=dean or finance requires that feature's read permission. These endpoints never grant upload, replacement or deletion access.",
+      "item": [
+        {
+          "name": "List Nafath agreements with Finance orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/nafath-center/?hasOrders=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Only agreements with orders', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.every(item => item.orderCount > 0)).to.eql(true); });",
+                  "const first = pm.response.json().data?.[0]; if (first) { pm.environment.set('finance_agreement_type', 'nafath-centers'); pm.environment.set('finance_agreement_id', first.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Nafath agreements without Finance orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/nafath-center/?hasOrders=false"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Only agreements without orders', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.every(item => item.orderCount === 0)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List visible Planning agreements with orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planning/agreements/?hasOrders=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Planning visibility and order filter', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.every(item => !item.isHidden && item.orderCount > 0)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read selected agreement Finance orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/agreement-orders/{{finance_agreement_type}}/{{finance_agreement_id}}/?scope={{agreement_order_scope}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Scoped order list loads', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().data?.[0]; if (first) pm.environment.set('disbursement_order_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download selected agreement Finance order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Download-Grant",
+                "value": "{{download_grant}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agreement-orders/{{finance_agreement_type}}/{{finance_agreement_id}}/{{disbursement_order_id}}/file/?scope={{agreement_order_scope}}",
+            "description": "Requires a fresh grant from Secure Downloads with matching document, order and scope. Direct calls without a grant return 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard - Role and permission scoped metrics",
+      "description": "Login as each role, then request the dashboard. Home read permission is required. Planning excludes hidden agreements. Finance metrics require Finance or Dean access. User counts are aggregate-only for Dean; user management remains Admin-only. No sample metrics are generated.",
+      "item": [
+        {
+          "name": "Get my live dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dashboard/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard loads', () => pm.response.to.have.status(200));",
+                  "const dashboard = pm.response.json().data;",
+                  "pm.test('Counts are numeric and months are bounded', () => { pm.expect(dashboard.agreements.total).to.be.a('number'); pm.expect(dashboard.charts.monthly).to.have.lengthOf(6); });",
+                  "if (dashboard.mode === 'planning') pm.test('Planning visibility enforced', () => { pm.expect(dashboard.agreements.hidden).to.eql(0); pm.expect(dashboard.recentAgreements.every(item => !item.isHidden)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dean - Agreement review and Planning visibility",
+      "description": "Login as Admin or Dean. Dean read permission lists every agreement, including hidden records, and reads details and Finance order files. Dean write permission changes only Planning visibility. Showing or hiding a document changes the next Planning list response. List and detail requests select the first available document and order; choose another ID as needed.",
+      "item": [
+        {
+          "name": "List all agreements including hidden",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dean/agreements/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dean list loads', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().data?.[0]; if (first) { pm.environment.set('dean_agreement_type', first.feature); pm.environment.set('dean_agreement_id', first.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read agreement details and active Finance orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dean details load', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().data?.orders?.[0]; if (first) pm.environment.set('dean_order_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Show agreement in Planning",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/visibility/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isHidden\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Agreement shown', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.isHidden).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hide agreement from Planning",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/visibility/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isHidden\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Agreement hidden', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.isHidden).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download Finance order with Dean permission",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Download-Grant",
+                "value": "{{download_grant}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/dean/agreements/{{dean_agreement_type}}/{{dean_agreement_id}}/orders/{{dean_order_id}}/file/",
+            "description": "Requires a fresh grant from Secure Downloads with matching document, order and scope. Direct calls without a grant return 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Finance - Disbursement orders",
+      "description": "Finance read permission lists agreements and downloads files. Finance write permission adds, replaces, or removes orders. Select actual files in multipart requests; do not manually set Content-Type. Hidden agreements remain available to Finance.",
+      "item": [
+        {
+          "name": "List agreements and order counts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/finance/agreements/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Finance list loads', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().data?.[0]; if (first) { pm.environment.set('finance_agreement_type', first.feature); pm.environment.set('finance_agreement_id', first.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List agreement disbursement orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Orders list loads', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().data?.[0]; if (first) pm.environment.set('disbursement_order_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload one or more disbursement orders",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/",
+            "description": "Select one or multiple files under files. Up to 20 files / 19 MiB total; PDF, PNG, JPG, JPEG, DOC, DOCX, XLS, XLSX, TXT.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Orders uploaded', () => pm.response.to.have.status(201));",
+                  "const first = pm.response.json().data?.[0]; if (first) pm.environment.set('disbursement_order_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit selected order name and notes",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"أمر الصرف الأول\",\n  \"notes\": \"ملاحظات المالية\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Replace selected order file",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/",
+            "description": "Replaces this order's file, retaining its ID. Other orders are unchanged.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download selected order (authenticated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Download-Grant",
+                "value": "{{download_grant}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/file/",
+            "description": "Requires a fresh grant from Secure Downloads with matching document, order and scope. Direct calls without a grant return 403."
+          }
+        },
+        {
+          "name": "Remove selected order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/finance/agreements/{{finance_agreement_type}}/{{finance_agreement_id}}/orders/{{disbursement_order_id}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Nginx service checks",
+      "item": [
+        {
+          "name": "API gateway health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/healthz",
+            "description": "Checks the API hostname through the Nginx gateway."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Gateway is healthy', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard gateway health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{dashboardUrl}}/health",
+            "description": "Checks the dashboard hostname through the Nginx gateway."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard is healthy', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard home through Nginx",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{dashboardUrl}}/",
+            "description": "Confirms the dashboard hostname is routed to Vue."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard is reachable', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Django admin through Nginx",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/login/",
+            "description": "Confirms the API hostname is routed to Django."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Django admin is reachable', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -277,51 +1255,83 @@
       "item": [
         {
           "name": "List educational content",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/educational-contents" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/educational-contents"
+          }
         },
         {
           "name": "Create educational content",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Content created', () => pm.response.to.have.status(201));",
-                "const data = pm.response.json();",
-                "if (data.data?.id) pm.collectionVariables.set('educational_content_id', data.data.id);"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Content created', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json();",
+                  "if (data.data?.id) pm.collectionVariables.set('educational_content_id', data.data.id);"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"educational-content\",\n  \"agreementNumber\": \"EDU-POSTMAN-001\",\n  \"name\": \"Postman educational agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"1000.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"1000.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"quarterlyDue\": \"250.00\",\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"contractText\": \"Created from Postman\",\n  \"isHidden\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"type\": \"educational-content\",\n  \"agreementNumber\": \"EDU-POSTMAN-001\",\n  \"name\": \"Postman educational agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"1000.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [],\n  \"quarterlyDue\": \"250.00\",\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"contractText\": \"Created from Postman\",\n  \"isHidden\": false,\n  \"costTable\": [\n    {\n      \"years\": \"أول 5 سنوات\",\n      \"percentage\": \"40.00\",\n      \"details\": \"حصة الجامعة\"\n    },\n    {\n      \"years\": \"ثاني 3 سنوات\",\n      \"percentage\": \"60.00\",\n      \"details\": \"حصة الجهة\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/educational-contents"
           }
         },
         {
           "name": "Get educational content",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/"
+          }
         },
         {
           "name": "Update educational content",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"updated-from-postman\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/"
           }
         },
         {
           "name": "Delete educational content",
-          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/" }
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/educational-contents/{{educational_content_id}}/"
+          }
         }
       ]
     },
@@ -330,66 +1340,120 @@
       "item": [
         {
           "name": "Planning - all visible agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/planning/agreements/" },
-          "event": [{
-            "listen": "test",
-            "script": { "exec": [
-              "pm.test('Planning list loads', () => pm.response.to.have.status(200));",
-              "pm.test('Hidden agreements are excluded', () => pm.response.json().data.forEach(item => pm.expect(item.isHidden).to.eql(false)));",
-              "pm.test('Each agreement has a date classification', () => pm.response.json().data.forEach(item => pm.expect(['finish', 'current', 'future', 'unknown']).to.include(item.planningPhase)));"
-            ] }
-          }]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planning/agreements/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Planning list loads', () => pm.response.to.have.status(200));",
+                  "pm.test('Hidden agreements are excluded', () => pm.response.json().data.forEach(item => pm.expect(item.isHidden).to.eql(false)));",
+                  "pm.test('Each agreement has a date classification', () => pm.response.json().data.forEach(item => pm.expect(['finish', 'current', 'future', 'unknown']).to.include(item.planningPhase)));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Planning - finished agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/planning/agreements/?phase=finish" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planning/agreements/?phase=finish"
+          }
         },
         {
           "name": "Planning - current agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/planning/agreements/?phase=current" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planning/agreements/?phase=current"
+          }
         },
         {
           "name": "Planning - future agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/planning/agreements/?phase=future" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planning/agreements/?phase=future"
+          }
         },
         {
           "name": "Create Nafath center agreement",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"nafath-center\",\n  \"agreementNumber\": \"NAFATH-POSTMAN-001\",\n  \"name\": \"Postman Nafath agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"500.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [{\"label\": \"First payment\", \"amount\": \"500.00\", \"dueDate\": \"2026-11-01\", \"order\": 0}],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"type\": \"nafath-center\",\n  \"agreementNumber\": \"NAFATH-POSTMAN-001\",\n  \"name\": \"Postman Nafath agreement\",\n  \"companyName\": \"Example Company\",\n  \"subject\": \"API test\",\n  \"estimatedCost\": \"500.00\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"paymentMethod\": \"table\",\n  \"paymentText\": \"\",\n  \"paymentSchedule\": [],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false,\n  \"costTable\": [\n    {\n      \"years\": \"أول 5 سنوات\",\n      \"percentage\": \"40.00\",\n      \"details\": \"حصة الجامعة\"\n    },\n    {\n      \"years\": \"ثاني 3 سنوات\",\n      \"percentage\": \"60.00\",\n      \"details\": \"حصة الجهة\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/nafath-center/create"
           }
         },
         {
           "name": "List Nafath center agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/nafath-center/" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/nafath-center/"
+          }
         },
         {
           "name": "List lifelong agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/life-long/" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/life-long/"
+          }
         },
         {
           "name": "List other agreements",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/other-agreement/" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/other-agreement/"
+          }
         },
         {
           "name": "List memorandums",
-          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/memorandum/" }
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/memorandum/"
+          }
         },
         {
           "name": "Create memorandum",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"memorandum\",\n  \"agreementNumber\": \"MEMO-POSTMAN-001\",\n  \"name\": \"Postman memorandum\",\n  \"startDate\": \"2026-10-01\",\n  \"endDate\": \"2027-10-01\",\n  \"reminderDate\": \"2027-09-01\",\n  \"rows\": [{\"header\": \"Term\", \"body\": \"Created from Postman\"}]\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"type\": \"memorandum\",\n  \"agreementNumber\": \"MEMO-POSTMAN-001\",\n  \"name\": \"Postman memorandum\",\n  \"startDate\": \"2026-10-01\",\n  \"endDate\": \"2027-10-01\",\n  \"reminderDate\": \"2027-09-01\",\n  \"rows\": [\n    {\n      \"header\": \"Term\",\n      \"body\": \"Created from Postman\"\n    }\n  ],\n  \"costTable\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/memorandum/create"
           }
@@ -398,11 +1462,20 @@
           "name": "Create lifelong agreement",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"life-long\",\n  \"agreementNumber\": \"LIFE-POSTMAN-001\",\n  \"companyName\": \"Example Company\",\n  \"name\": \"Postman lifelong agreement\",\n  \"subject\": \"API test\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"paymentMethod\": \"text\",\n  \"paymentText\": \"One payment\",\n  \"paymentSchedule\": [],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"type\": \"life-long\",\n  \"agreementNumber\": \"LIFE-POSTMAN-001\",\n  \"companyName\": \"Example Company\",\n  \"name\": \"Postman lifelong agreement\",\n  \"subject\": \"API test\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"paymentMethod\": \"text\",\n  \"paymentText\": \"One payment\",\n  \"paymentSchedule\": [],\n  \"status\": \"active\",\n  \"disbursement\": \"pending\",\n  \"budgetType\": \"current\",\n  \"isHidden\": false,\n  \"costTable\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/life-long/create"
           }
@@ -411,11 +1484,20 @@
           "name": "Create other agreement",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"other-agreements\",\n  \"agreementNumber\": \"OTHER-POSTMAN-001\",\n  \"name\": \"Postman other agreement\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"isHidden\": false,\n  \"rows\": [{\"header\": \"Term\", \"body\": \"Created from Postman\"}]\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"type\": \"other-agreements\",\n  \"agreementNumber\": \"OTHER-POSTMAN-001\",\n  \"name\": \"Postman other agreement\",\n  \"startDate\": \"2026-10-11\",\n  \"endDate\": \"2026-12-31\",\n  \"reminderDate\": \"2026-12-15\",\n  \"isHidden\": false,\n  \"rows\": [\n    {\n      \"header\": \"Term\",\n      \"body\": \"Created from Postman\"\n    }\n  ],\n  \"costTable\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/other-agreement/create"
           }
@@ -439,7 +1521,9 @@
             {
               "listen": "prerequest",
               "script": {
-                "exec": ["pm.collectionVariables.set('managed_username', `managed_user_${Date.now()}`);"]
+                "exec": [
+                  "pm.collectionVariables.set('managed_username', `managed_user_${Date.now()}`);"
+                ]
               }
             },
             {
@@ -456,11 +1540,20 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"{{managed_username}}\",\n  \"email\": \"{{managed_username}}@example.com\",\n  \"roleCode\": \"contract\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/users/"
           }
@@ -469,11 +1562,20 @@
           "name": "Update user and role",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"updated@example.com\",\n  \"roleCode\": \"finance\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/users/{{managed_user_id}}/"
           }
@@ -482,33 +1584,53 @@
           "name": "Deactivate user",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"isActive\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/users/{{managed_user_id}}/"
           }
         },
         {
           "name": "Reset user password",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "const data = pm.response.json().data;",
-                "if (data?.temporaryPassword) pm.collectionVariables.set('temporary_password', data.temporaryPassword);"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "if (data?.temporaryPassword) pm.collectionVariables.set('temporary_password', data.temporaryPassword);"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"resetPassword\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/users/{{managed_user_id}}/"
           }
@@ -517,37 +1639,67 @@
           "name": "Activate user",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"isActive\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/users/{{managed_user_id}}/"
           }
         },
         {
           "name": "Login with temporary password",
-          "event": [{
-            "listen": "prerequest",
-            "script": { "exec": ["pm.request.headers.remove('Authorization');"] }
-          }, {
-            "listen": "test",
-            "script": {
-              "exec": [
-                "const data = pm.response.json().data;",
-                "if (data?.token) pm.environment.set('token', data.token);"
-              ]
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.remove('Authorization');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Session request succeeds', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "if (data?.token) pm.environment.set('token', data.token);",
+                  "if (data?.csrfToken) pm.environment.set('csrf_token', data.csrfToken);"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{managed_username}}\",\n  \"password\": \"{{temporary_password}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"username\": \"{{managed_username}}\",\n  \"password\": \"{{temporary_password}}\",\n  \"rememberMe\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/login/"
           }
@@ -556,14 +1708,37 @@
           "name": "Submit new password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"currentPassword\": \"{{temporary_password}}\",\n  \"newPassword\": \"NewStrongPassword123!\",\n  \"newPassword2\": \"NewStrongPassword123!\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/change-password/"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Session request succeeds', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "if (data?.token) pm.environment.set('token', data.token);",
+                  "if (data?.csrfToken) pm.environment.set('csrf_token', data.csrfToken);"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -582,11 +1757,20 @@
           "name": "Create role",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"roleCode\": \"auditor\",\n  \"roleName\": \"Auditor\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/access-control/"
           }
@@ -595,11 +1779,20 @@
           "name": "Update role feature permission",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"roleCode\": \"finance\",\n  \"feature\": \"educational-content\",\n  \"read\": true,\n  \"write\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"roleCode\": \"finance\",\n  \"feature\": \"educational-content\",\n  \"read\": true,\n  \"write\": false,\n  \"download\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/access-control/"
           }
@@ -608,11 +1801,20 @@
           "name": "Delete custom role",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"roleCode\": \"auditor\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/access-control/"
           }
@@ -625,7 +1827,23 @@
       "item": [
         {
           "name": "Logout",
-          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/auth/logout/" }
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/logout/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logout succeeds', () => pm.response.to.have.status(200));",
+                  "pm.environment.unset('token'); pm.environment.unset('csrf_token'); pm.environment.unset('download_grant');"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
