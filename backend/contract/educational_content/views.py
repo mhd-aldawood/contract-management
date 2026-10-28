@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from contract.api.responses import success_response
 from contract.rbac import HasFeaturePermission
+from contract.order_counts import with_order_counts
 from .models import EducationalContent
 from .serializers import EducationalContentSerializer
 
@@ -49,7 +50,7 @@ class EducationalContentListCreateView(APIView):
     feature_code = 'educational-content'
 
     def get(self, request):
-        qs = EducationalContent.objects.all()
+        qs = with_order_counts(EducationalContent.objects.all(), request).prefetch_related('payment_schedule')
         content_type = request.query_params.get("type")
         if content_type:
             qs = qs.filter(type=content_type)
@@ -191,7 +192,7 @@ class EducationalContentUploadView(APIView):
                 data={
                     "id": content.id,
                     "fileName": content.original_name,
-                    "storedName": content.stored_name,
+                    "hasFile": bool(content.file),
                     "url": request.build_absolute_uri(content.file.url),
                 },
             )

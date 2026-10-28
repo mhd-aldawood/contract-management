@@ -2,9 +2,11 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from rest_framework.authtoken.models import Token
 from .educational_content.models import EducationalContent, PaymentScheduleItem  # noqa: F401
+from .request_models import ContractRequest, BidMinute  # noqa: F401
+from .doctoral_models import DoctoralContract  # noqa: F401
 from .finance_models import DisbursementOrder  # noqa: F401
+from .security_models import AuthSession, DownloadGrant, SecurityPolicy, LoginAttempt  # noqa: F401
 
 
 class Role(models.Model):
@@ -27,6 +29,7 @@ class RolePermission(models.Model):
     feature = models.SlugField(max_length=80)
     can_read = models.BooleanField(default=False)
     can_write = models.BooleanField(default=False)
+    can_download = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['role__name', 'feature']
@@ -63,7 +66,6 @@ def create_profile_and_token(sender, instance, created, **kwargs):
     if created:
         role = Role.objects.filter(code='admin').first() if instance.is_superuser else None
         Profile.objects.create(user=instance, role=role)
-        Token.objects.get_or_create(user=instance)
 
 
 

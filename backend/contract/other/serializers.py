@@ -1,6 +1,8 @@
 import json
 
 from rest_framework import serializers
+from contract.costs import CostTableField, AgreementCostMixin
+from contract.order_counts import AgreementOrderCountMixin
 from .models import Agreement, AgreementRow
 
 
@@ -17,7 +19,11 @@ class AgreementRowSerializer(serializers.ModelSerializer):
         fields = ["header", "body"]
 
 
-class AgreementSerializer(serializers.ModelSerializer):
+class AgreementSerializer(AgreementCostMixin, AgreementOrderCountMixin, serializers.ModelSerializer):
+    orderCount = serializers.SerializerMethodField()
+    costTable = CostTableField(source='cost_table', required=False)
+    paymentMethod = serializers.ChoiceField(source='payment_method', choices=['', 'text', 'table'], required=False)
+    paymentText = serializers.CharField(source='payment_text', required=False, allow_blank=True)
     agreementNumber = serializers.CharField(source="agreement_number")
     startDate       = serializers.DateField(source="start_date")
     endDate         = serializers.DateField(source="end_date")
@@ -31,6 +37,7 @@ class AgreementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agreement
         fields = [
+            'orderCount', 'costTable', 'paymentMethod', 'paymentText',
             "id", "type",
             "agreementNumber", "name",
             "startDate", "endDate", "reminderDate", "isHidden",

@@ -39,6 +39,7 @@ class LifeLongAgreement(models.Model):
         max_length=16, choices=BUDGET_TYPE_CHOICES, default='current'
     )
     is_hidden = models.BooleanField(default=False)
+    cost_table = models.JSONField(default=list, blank=True)
 
     file = models.FileField(
         upload_to=UploadToPath('lifelong/files'),

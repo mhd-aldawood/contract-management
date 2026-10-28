@@ -32,5 +32,12 @@
   "request.unsupported_media_type": "نوع البيانات المرسلة غير مدعوم",
   "request.throttled": "عدد الطلبات كبير. يرجى المحاولة لاحقاً",
   "request.failed": "تعذر إكمال الطلب",
-  "server.internal_error": "حدث خطأ داخلي في الخادم. يرجى المحاولة لاحقاً"
+  "server.internal_error": "حدث خطأ داخلي في الخادم. يرجى المحاولة لاحقاً",
+  "file.grant_used": "تم استخدام إذن التنزيل أو تغير الملف. أعد طلب التنزيل.",
+  "file.grant_expired": "انتهت صلاحية إذن التنزيل. أعد طلب التنزيل.",
+  "doctoral.created": "تم حفظ عقد الدكتوراه بنجاح",
+  "doctoral.updated": "تم تحديث عقد الدكتوراه بنجاح",
+  "contract_request.created": "تم حفظ العقد بنجاح",
+  "contract_request.updated": "تم تحديث العقد بنجاح",
+  "contract_request.deleted": "تم حذف العقد بنجاح"
 }

@@ -63,18 +63,18 @@ class DashboardTests(APITestCase):
                 self.set_role(role)
                 data = self.get_dashboard()
                 self.assertEqual(data['mode'], role)
-                self.assertEqual(data['agreements']['total'], 6)
-                self.assertEqual(data['agreements']['current'], 2)
+                self.assertEqual(data['agreements']['total'], len(DOCUMENTS) + 1)
+                self.assertEqual(data['agreements']['current'], 3)
                 self.assertEqual(data['agreements']['future'], 2)
                 self.assertEqual(data['agreements']['finish'], 1)
                 self.assertEqual(data['agreements']['hidden'], 2)
                 self.assertEqual(data['finance']['orderCount'], 3)
                 self.assertEqual(data['finance']['withOrders'], 2)
-                self.assertEqual(data['finance']['withoutOrders'], 4)
+                self.assertEqual(data['finance']['withoutOrders'], len(DOCUMENTS) - 1)
                 self.assertEqual(data['users']['total'], get_user_model().objects.count())
                 self.assertEqual(len(data['charts']['monthly']), 6)
                 self.assertEqual(data['charts']['monthly'][-1]['orders'], 3)
-                self.assertEqual(sum(item['count'] for item in data['charts']['types']), 6)
+                self.assertEqual(sum(item['count'] for item in data['charts']['types']), len(DOCUMENTS) + 1)
                 self.assertEqual(len(data['recentAgreements']), 5)
                 self.assertEqual(len(data['recentOrders']), 3)
                 self.assertEqual('roles' in data['users'], role == 'admin')
@@ -84,9 +84,9 @@ class DashboardTests(APITestCase):
         self.set_role('planning')
         data = self.get_dashboard()
         self.assertEqual(data['scope'], 'planning-visible')
-        self.assertEqual(data['agreements']['total'], 4)
+        self.assertEqual(data['agreements']['total'], len(DOCUMENTS) - 1)
         self.assertEqual(data['agreements']['hidden'], 0)
-        self.assertEqual(data['agreements']['current'], 1)
+        self.assertEqual(data['agreements']['current'], 2)
         self.assertEqual(data['agreements']['future'], 1)
         self.assertIsNone(data['finance'])
         self.assertIsNone(data['users'])
@@ -95,7 +95,7 @@ class DashboardTests(APITestCase):
         self.assertTrue(all('orders' not in item for item in data['charts']['monthly']))
         self.records['nafath-centers'].is_hidden = True
         self.records['nafath-centers'].save()
-        self.assertEqual(self.get_dashboard()['agreements']['total'], 3)
+        self.assertEqual(self.get_dashboard()['agreements']['total'], len(DOCUMENTS) - 2)
 
     def test_finance_coverage_ignores_removed_orders_and_updates_live(self, today):
         self.set_role('finance')
@@ -106,15 +106,15 @@ class DashboardTests(APITestCase):
         data = self.get_dashboard()
         self.assertEqual(data['finance']['orderCount'], 2)
         self.assertEqual(data['finance']['withOrders'], 1)
-        self.assertEqual(data['finance']['withoutOrders'], 5)
+        self.assertEqual(data['finance']['withoutOrders'], len(DOCUMENTS))
 
     def test_contract_dashboard_does_not_expose_finance_or_user_metrics(self, today):
         self.set_role('contract')
         data = self.get_dashboard()
-        self.assertEqual(data['agreements']['total'], 6)
+        self.assertEqual(data['agreements']['total'], len(DOCUMENTS) + 1)
         self.assertIsNone(data['finance'])
         self.assertIsNone(data['users'])
-        self.assertEqual(data['agreements']['remindersDue'], 4)
+        self.assertEqual(data['agreements']['remindersDue'], 5)
 
     def test_custom_permissions_restrict_counts_charts_and_recent_records(self, today):
         role = Role.objects.create(code='limited-dashboard', name='Limited')
@@ -140,8 +140,8 @@ class DashboardTests(APITestCase):
         # 21:30 UTC on Sept 30 is already October in Damascus.
         type(record).objects.filter(pk=record.pk).update(created_at=datetime(2026, 9, 30, 21, 30, tzinfo=ZoneInfo('UTC')))
         data = self.get_dashboard()
-        self.assertEqual(data['agreements']['current'], 2)
-        self.assertEqual(data['charts']['monthly'][-1]['agreements'], 6)
+        self.assertEqual(data['agreements']['current'], 3)
+        self.assertEqual(data['charts']['monthly'][-1]['agreements'], len(DOCUMENTS) + 1)
         self.assertEqual(data['charts']['monthly'][-2]['agreements'], 0)
 
     def test_home_permission_password_change_and_authentication_are_enforced(self, today):

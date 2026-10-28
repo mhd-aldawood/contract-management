@@ -1,5 +1,7 @@
 import json
 from rest_framework import serializers
+from contract.costs import CostTableField, AgreementCostMixin
+from contract.order_counts import AgreementOrderCountMixin
 
 from contract.life_long.models import LifeLongAgreementPaymentRow, LifeLongAgreement
 
@@ -27,7 +29,9 @@ class PaymentScheduleRowSerializer(serializers.ModelSerializer):
         return value
 
 
-class LifeLongAgreementSerializer(serializers.ModelSerializer):
+class LifeLongAgreementSerializer(AgreementCostMixin, AgreementOrderCountMixin, serializers.ModelSerializer):
+    orderCount = serializers.SerializerMethodField()
+    costTable = CostTableField(source='cost_table', required=False)
     # ---- nested rows: wire key "paymentSchedule" → model attr "payment_schedule"
     paymentSchedule  = PaymentScheduleRowSerializer(
         source='payment_schedule',
@@ -53,6 +57,7 @@ class LifeLongAgreementSerializer(serializers.ModelSerializer):
         model = LifeLongAgreement
         # list every wire field you want exposed
         fields = [
+            'orderCount', 'costTable',
              'id', 'type', 'agreementNumber', 'name', 'companyName',
              'startDate', 'endDate', 'reminderDate', 'subject',
             'paymentMethod', 'paymentText', 'paymentSchedule',

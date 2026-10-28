@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from django.db import transaction
-from django.db.models import Count, Q
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -13,14 +12,17 @@ from rest_framework.views import APIView
 
 from contract.api.responses import success_response
 from contract.educational_content.models import EducationalContent
+from contract.doctoral_models import DoctoralContract
 from contract.finance_models import DisbursementOrder
 from contract.life_long.models import LifeLongAgreement
 from contract.nafath_center.models import NafathCenterAgreement
 from contract.other.models import Agreement
+from contract.order_counts import with_order_counts
 from contract.rbac import HasFeaturePermission
 
 
 DOCUMENTS = {
+    'doctoral-contracts': (DoctoralContract, 'doctoral_contract', {}, 'عقود الدكتوراه'),
     'nafath-centers': (NafathCenterAgreement, 'nafath_agreement', {}, 'اتفاقيات مراكز النفاذ'),
     'lifelong-learning': (LifeLongAgreement, 'lifelong_agreement', {}, 'التعلم مدى الحياة'),
     'educational-content': (EducationalContent, 'educational_agreement', {}, 'المحتوى التعليمي'),
@@ -70,9 +72,7 @@ class FinanceAgreementListView(FinanceView):
     def get(self, request):
         data = []
         for kind, (model, _, filters, category) in DOCUMENTS.items():
-            agreements = model.objects.filter(**filters).annotate(
-                order_count=Count('disbursement_orders', filter=Q(disbursement_orders__is_removed=False)),
-            )
+            agreements = with_order_counts(model.objects.filter(**filters), request)
             if kind in {'other-agreements', 'memorandum'}:
                 agreements = agreements.prefetch_related('rows')
             # Hide affects Planning only; Finance can upload orders for any agreement.
@@ -188,12 +188,6 @@ class DisbursementOrderDetailView(FinanceView):
 class DisbursementOrderFileView(FinanceView):
     def get(self, request, kind, pk, order_id):
         _, scope = agreement_scope(kind, pk)
-        order = get_object_or_404(DisbursementOrder, pk=order_id, is_removed=False, **scope)
-        try:
-            stream = order.file.open('rb')
-        except FileNotFoundError:
-            raise NotFound()
-        response = FileResponse(stream, as_attachment=True, filename=order.file_name, content_type='application/octet-stream')
-        response['Cache-Control'] = 'private, no-store'
-        response['X-Content-Type-Options'] = 'nosniff'
-        return response
+        get_object_or_404(DisbursementOrder, pk=order_id, is_removed=False, **scope)
+        from contract.file_access import consume_download_grant
+        return consume_download_grant(request, kind=kind, pk=pk, order_id=order_id)

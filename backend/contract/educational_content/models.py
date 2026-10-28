@@ -33,6 +33,7 @@ class EducationalContent(models.Model):
     budget_type = models.CharField(max_length=16, choices=BUDGET_TYPE_CHOICES, default="current")
     contract_text = models.TextField(blank=True, default="")
     is_hidden = models.BooleanField(default=False)
+    cost_table = models.JSONField(default=list, blank=True)
 
     # ---- file storage ----
     file = models.FileField(upload_to=UploadToPath('educational_contents'), null=True, blank=True)

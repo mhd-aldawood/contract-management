@@ -4,6 +4,8 @@ from .models import RolePermission
 
 
 FEATURES = [
+    {'code': 'contract-requests', 'name': 'Create Contract', 'nameAr': 'إضافة عقد'},
+    {'code': 'doctoral-contracts', 'name': 'Doctoral Contracts', 'nameAr': 'عقد الدكتوراه'},
     {'code': 'home', 'name': 'Home', 'nameAr': 'الرئيسية'},
     {'code': 'profile', 'name': 'Profile', 'nameAr': 'الحساب'},
     {'code': 'settings', 'name': 'Settings', 'nameAr': 'الإعدادات'},
@@ -18,8 +20,12 @@ FEATURES = [
     {'code': 'educational-content', 'name': 'Educational Content', 'nameAr': 'المحتوى التعليمي'},
     {'code': 'access-control', 'name': 'Access Control', 'nameAr': 'إدارة الصلاحيات'},
     {'code': 'user-management', 'name': 'User Management', 'nameAr': 'إدارة المستخدمين'},
+    {'code': 'security-settings', 'name': 'Security Settings', 'nameAr': 'إعدادات الأمان'},
 ]
 FEATURE_CODES = {feature['code'] for feature in FEATURES}
+DOWNLOAD_FEATURES = {'doctoral-contracts', 'planning', 'finance', 'dean', 'nafath-centers', 'memorandum', 'lifelong-learning', 'other-agreements', 'educational-content'}
+for feature in FEATURES:
+    feature['supportsDownload'] = feature['code'] in DOWNLOAD_FEATURES
 
 
 def is_admin_user(user):
@@ -31,7 +37,7 @@ def is_admin_user(user):
 
 
 def user_has_feature_permission(user, feature, action='read'):
-    if not user or not user.is_authenticated or feature not in FEATURE_CODES:
+    if not user or not user.is_authenticated or not user.is_active or feature not in FEATURE_CODES:
         return False
     profile = getattr(user, 'profile', None)
     if profile is None or profile.must_change_password:
@@ -43,6 +49,10 @@ def user_has_feature_permission(user, feature, action='read'):
     if role is None:
         return False
 
+    if action not in {'read', 'write', 'download'}:
+        return False
+    if action == 'download':
+        return feature in DOWNLOAD_FEATURES and RolePermission.objects.filter(role=role, feature=feature, can_read=True, can_download=True).exists()
     field = 'can_write' if action == 'write' else 'can_read'
     return RolePermission.objects.filter(
         role=role,

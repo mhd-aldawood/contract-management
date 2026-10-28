@@ -32,5 +32,12 @@
   "request.unsupported_media_type": "The submitted content type is not supported",
   "request.throttled": "Too many requests. Please try again later",
   "request.failed": "The request could not be completed",
-  "server.internal_error": "An internal server error occurred. Please try again later"
+  "server.internal_error": "An internal server error occurred. Please try again later",
+  "file.grant_used": "Download grant used or file changed. Request a new download.",
+  "file.grant_expired": "Download grant expired. Request a new download.",
+  "doctoral.created": "Doctoral contract created successfully",
+  "doctoral.updated": "Doctoral contract updated successfully",
+  "contract_request.created": "Contract request created successfully",
+  "contract_request.updated": "Contract request updated successfully",
+  "contract_request.deleted": "Contract request deleted successfully"
 }

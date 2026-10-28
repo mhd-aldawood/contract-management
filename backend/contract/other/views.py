@@ -4,6 +4,7 @@ from rest_framework import status
 
 from contract.api.responses import success_response
 from contract.rbac import HasFeaturePermission
+from contract.order_counts import with_order_counts
 from contract.other.models import Agreement
 from contract.other.serializers import AgreementSerializer
 
@@ -38,7 +39,7 @@ class AgreementListView(generics.ListAPIView):
     agreement_type = 'other-agreements'
 
     def get(self, request, *args, **kwargs):
-        agreements = Agreement.objects.filter(type=self.agreement_type).prefetch_related('rows')
+        agreements = with_order_counts(Agreement.objects.filter(type=self.agreement_type), request).prefetch_related('rows')
         data = self.get_serializer(agreements, many=True).data
         return success_response(request=request, code='request.success', data=data,
                                 total_count=len(data), page_size=len(data))

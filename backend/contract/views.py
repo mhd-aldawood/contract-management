@@ -1,5 +1,12 @@
 
 import secrets
+import re
+from datetime import timedelta
+from django.db import transaction
+from django.utils import timezone
+from rest_framework.exceptions import AuthenticationFailed
+from .security_models import AuthSession, LoginAttempt
+from .authentication import (issue_session, rotate_access, policy, digest, session_valid, validate_origin, validate_refresh_csrf, set_session_cookies, clear_session_cookies, check_login_limit, failed_login, REFRESH_COOKIE, CSRF_COOKIE)
 
 from django.contrib.auth.models import User
 from django.contrib.auth import logout as django_logout
@@ -24,66 +31,100 @@ from .serializers import (
 
 
 class LoginView(APIView):
-    """POST /api/auth/login/  ->  authenticate + return token"""
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
+        validate_origin(request)
+        if not isinstance(request.data, dict):
+            raise ValidationError({'detail': ['Expected a JSON object.']})
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+        username = str(request.data.get('username', '')).strip()
+        check_login_limit(username)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError:
+            if username and request.data.get('password'):
+                failed_login(username)
+            raise
         user = serializer.validated_data['user']
-        token, _ = Token.objects.get_or_create(user=user)
-
-        return success_response(
-            request=request,
-            code='auth.login.success',
-            data={
-                'user': UserSerializer(user).data,
-                'token': token.key,
-            },
-            status_code=status.HTTP_200_OK,
-        )
+        LoginAttempt.objects.filter(pk=digest(username.casefold())).delete()
+        session, access, refresh = issue_session(user, serializer.validated_data['rememberMe'])
+        response = success_response(request=request, code='auth.login.success', data={
+            'user': UserSerializer(user).data, 'token': access,
+            'accessExpiresAt': session.access_expires_at, 'sessionExpiresAt': session.expires_at,
+        })
+        return set_session_cookies(response, request, session, refresh)
 
 
 class LogoutView(APIView):
-    """POST /api/auth/logout/  ->  delete user's token"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        validate_origin(request)
+        if isinstance(request.auth, AuthSession):
+            AuthSession.objects.filter(pk=request.auth.pk).update(revoked_at=timezone.now())
         Token.objects.filter(user=request.user).delete()
         django_logout(request)
-        return success_response(
-            request=request,
-            code='auth.logout.success',
-            status_code=status.HTTP_200_OK,
-        )
+        return clear_session_cookies(success_response(request=request, code='auth.logout.success'))
 
 
 class MeView(APIView):
-    """GET /api/auth/me/  ->  current user's info"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return success_response(
-            request=request,
-            code='auth.me.success',
-            data=UserSerializer(request.user).data,
-        )
+        response = success_response(request=request, code='auth.me.success', data=UserSerializer(request.user).data)
+        response['Cache-Control'] = 'no-store'
+        return response
+
+
+class RefreshCsrfView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        validate_origin(request)
+        csrf = request.COOKIES.get(CSRF_COOKIE, '')
+        if not re.fullmatch(r'[A-Za-z0-9_-]{32,128}', csrf):
+            csrf = secrets.token_urlsafe(32)
+        response = success_response(request=request, code='request.success', data={'csrfToken': csrf})
+        response.set_cookie(CSRF_COOKIE, csrf, path='/api/auth/', secure=request.is_secure(), httponly=True, samesite='Lax')
+        response['Cache-Control'] = 'no-store'
+        return response
 
 
 class TokenRefreshView(APIView):
-    """POST /api/auth/token/refresh/  ->  rotate token"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get_authenticate_header(self, request):
+        return 'Token'
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        return clear_session_cookies(response) if response.status_code == 401 else response
 
     def post(self, request):
-        Token.objects.filter(user=request.user).delete()
-        token = Token.objects.create(user=request.user)
-        return success_response(
-            request=request,
-            code='auth.token_refreshed',
-            data=TokenSerializer(token).data,
-            status_code=status.HTTP_200_OK,
-        )
+        validate_refresh_csrf(request)
+        refresh = request.COOKIES.get(REFRESH_COOKIE, '')
+        with transaction.atomic():
+            session = AuthSession.objects.select_for_update(of=('self',)).select_related('user').filter(refresh_hash=digest(refresh)).first()
+            rules = policy()
+            if not session or not session_valid(session, rules):
+                raise AuthenticationFailed('Session expired. Please sign in again.')
+            if not rules.allow_remember:
+                session.remembered = False
+            duration = timedelta(days=rules.remember_days) if session.remembered else timedelta(hours=rules.session_hours)
+            session.expires_at = min(session.expires_at, session.created_at + duration)
+            new_refresh = secrets.token_urlsafe(48)
+            session.refresh_hash = digest(new_refresh)
+            access = rotate_access(session, rules)
+            session.save()
+        response = success_response(request=request, code='auth.token_refreshed', data={
+            'user': UserSerializer(session.user).data, 'token': access,
+            'accessExpiresAt': session.access_expires_at, 'sessionExpiresAt': session.expires_at,
+        })
+        return set_session_cookies(response, request, session, new_refresh)
 
 
 class ChangePasswordView(APIView):
@@ -100,11 +141,15 @@ class ChangePasswordView(APIView):
         profile, _ = Profile.objects.get_or_create(user=request.user)
         profile.must_change_password = False
         profile.save(update_fields=['must_change_password'])
-        return success_response(
-            request=request,
-            code='auth.password_changed',
-            data=UserSerializer(request.user).data,
-        )
+        request.user.profile = profile
+        remembered = isinstance(request.auth, AuthSession) and request.auth.remembered
+        AuthSession.objects.filter(user=request.user).update(revoked_at=timezone.now())
+        Token.objects.filter(user=request.user).delete()
+        session, access, refresh = issue_session(request.user, remembered)
+        response = success_response(request=request, code='auth.password_changed',
+                                    data={**UserSerializer(request.user).data, 'token': access,
+                                          'accessExpiresAt': session.access_expires_at, 'sessionExpiresAt': session.expires_at})
+        return set_session_cookies(response, request, session, refresh)
 
 
 def _temporary_password():
@@ -253,9 +298,11 @@ class UserManagementDetailView(APIView):
             profile.must_change_password = True
             profile.save(update_fields=['must_change_password'])
             Token.objects.filter(user=user).delete()
+            AuthSession.objects.filter(user=user).update(revoked_at=timezone.now())
 
         if not user.is_active:
             Token.objects.filter(user=user).delete()
+            AuthSession.objects.filter(user=user).update(revoked_at=timezone.now())
 
         data = {'user': UserSerializer(user).data}
         if temporary_password:
@@ -278,6 +325,7 @@ class AccessControlView(APIView):
                 permission.feature: {
                     'read': permission.can_read,
                     'write': permission.can_write,
+                    'download': permission.can_read and permission.can_download,
                 }
                 for permission in role.permissions.all()
             }
@@ -288,7 +336,7 @@ class AccessControlView(APIView):
                 'permissions': {
                     feature['code']: permission_map.get(
                         feature['code'],
-                        {'read': False, 'write': False},
+                        {'read': False, 'write': False, 'download': False},
                     )
                     for feature in FEATURES
                 },
@@ -365,16 +413,27 @@ class AccessControlView(APIView):
             if role is None:
                 raise ValidationError({'roleCode': ['Role not found.']})
 
-            can_read = bool(request.data.get('read', False))
-            can_write = bool(request.data.get('write', False))
-            if can_write:
+            from .rbac import DOWNLOAD_FEATURES
+            existing = RolePermission.objects.filter(role=role, feature=feature).first()
+            for action in ['read', 'write', 'download']:
+                if action in request.data and type(request.data[action]) is not bool:
+                    raise ValidationError({action: ['A boolean value is required.']})
+            can_read = request.data.get('read', existing.can_read if existing else False)
+            can_write = request.data.get('write', existing.can_write if existing else False)
+            can_download = request.data.get('download', existing.can_download if existing else False)
+            if request.data.get('read') is False:
+                can_write = can_download = False
+            elif can_write or can_download:
                 can_read = True
+            if feature not in DOWNLOAD_FEATURES:
+                can_download = False
             RolePermission.objects.update_or_create(
                 role=role,
                 feature=feature,
                 defaults={
                     'can_read': can_read,
                     'can_write': can_write,
+                    'can_download': can_download,
                 },
             )
 

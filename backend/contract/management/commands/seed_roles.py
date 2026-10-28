@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from contract.models import Profile, Role, RolePermission
-from contract.rbac import FEATURES
+from contract.rbac import FEATURES, DOWNLOAD_FEATURES
 
 
 ROLE_NAMES = {
@@ -14,13 +14,15 @@ ROLE_NAMES = {
 }
 
 CONTRACT_FEATURES = {
+    'contract-requests',
+    'doctoral-contracts',
     'nafath-centers',
     'memorandum',
     'lifelong-learning',
     'other-agreements',
     'educational-content',
 }
-ADMIN_ONLY_FEATURES = {'access-control', 'user-management'}
+ADMIN_ONLY_FEATURES = {'access-control', 'user-management', 'security-settings'}
 
 
 def default_access(role_code, feature):
@@ -66,6 +68,7 @@ class Command(BaseCommand):
                     defaults={
                         'can_read': can_read,
                         'can_write': can_write,
+                        'can_download': can_read and feature_code in DOWNLOAD_FEATURES,
                     },
                 )
 

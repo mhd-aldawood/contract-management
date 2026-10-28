@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 from contract.finance import DOCUMENTS
 from contract.finance_models import DisbursementOrder
 from contract.models import Role, RolePermission
+from contract.test_helpers import authenticate_session, grant_headers, close_download
 
 
 class DeanReviewTests(APITestCase):
@@ -20,7 +21,7 @@ class DeanReviewTests(APITestCase):
         self.addCleanup(settings.disable)
         self.user = get_user_model().objects.create_user(username='dean-review', password='test-password')
         self.set_role('dean')
-        self.client.force_authenticate(self.user)
+        authenticate_session(self.client, self.user)
         self.records = {}
         for kind, (model, _, filters, _) in DOCUMENTS.items():
             name_field = 'agreement_name' if kind == 'lifelong-learning' else 'name'
@@ -51,7 +52,7 @@ class DeanReviewTests(APITestCase):
         self.create_order(removed=True)
         response = self.client.get('/api/dean/agreements/')
         self.assertEqual(response.status_code, 200, response.data)
-        self.assertEqual(response.data['totalCount'], 5)
+        self.assertEqual(response.data['totalCount'], len(DOCUMENTS))
         self.assertEqual({item['feature'] for item in response.data['data']}, set(DOCUMENTS))
         self.assertTrue(all(item['isHidden'] for item in response.data['data']))
         for kind in DOCUMENTS:
@@ -85,15 +86,15 @@ class DeanReviewTests(APITestCase):
         RolePermission.objects.filter(role=self.user.profile.role, feature='finance').update(can_read=False, can_write=False)
         order = self.create_order()
         url = self.url() + f'orders/{order.pk}/file/'
-        response = self.client.get(url)
+        response = self.client.get(url, **grant_headers(self.client, 'nafath-centers', self.records['nafath-centers'].pk, order.pk, 'dean'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(b''.join(response.streaming_content), b'%PDF test dean order')
-        response.close()
-        self.assertEqual(self.client.get(self.url('memorandum') + f'orders/{order.pk}/file/').status_code, 404)
+        close_download(response)
+        self.assertEqual(self.client.post('/api/files/grants/', {'kind': 'memorandum', 'agreementId': self.records['memorandum'].pk, 'orderId': order.pk, 'scope': 'dean'}, format='json').status_code, 404)
         self.assertEqual(self.client.get(f'/api/finance/agreements/nafath-centers/{self.records["nafath-centers"].pk}/orders/').status_code, 403)
         order.is_removed = True
         order.save(update_fields=['is_removed'])
-        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post('/api/files/grants/', {'kind': 'nafath-centers', 'agreementId': self.records['nafath-centers'].pk, 'orderId': order.pk, 'scope': 'dean'}, format='json').status_code, 404)
 
     def test_read_only_dean_can_review_but_cannot_change_visibility(self):
         RolePermission.objects.filter(role=self.user.profile.role, feature='dean').update(can_write=False)

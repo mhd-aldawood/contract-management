@@ -4,12 +4,13 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
-from .rbac import FEATURES, is_admin_user
+from .rbac import FEATURES, DOWNLOAD_FEATURES, is_admin_user
 
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+    rememberMe = serializers.BooleanField(default=False)
 
     def validate(self, attrs):
         user = authenticate(
@@ -53,13 +54,13 @@ class UserSerializer(serializers.ModelSerializer):
     def get_permissions(self, obj):
         if is_admin_user(obj):
             return {
-                feature['code']: {'read': True, 'write': True}
+                feature['code']: {'read': True, 'write': True, 'download': feature['code'] in DOWNLOAD_FEATURES}
                 for feature in FEATURES
             }
 
         role = getattr(getattr(obj, 'profile', None), 'role', None)
         permissions = {
-            feature['code']: {'read': False, 'write': False}
+            feature['code']: {'read': False, 'write': False, 'download': False}
             for feature in FEATURES
         }
         if role is None:
@@ -70,6 +71,7 @@ class UserSerializer(serializers.ModelSerializer):
                 permissions[permission.feature] = {
                     'read': permission.can_read,
                     'write': permission.can_write,
+                    'download': permission.can_read and permission.can_download,
                 }
         return permissions
 

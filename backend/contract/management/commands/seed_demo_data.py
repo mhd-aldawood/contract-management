@@ -39,7 +39,8 @@ class Command(BaseCommand):
         uploader = Profile.objects.filter(user__username='cm_demo_finance', role__code='finance').select_related('user').first()
         uploader = uploader.user if uploader else None
         created_count = order_count = skipped_count = 0
-        for kind, (model, relation, _, _) in DOCUMENTS.items():
+        for kind in EXAMPLES:
+            model, relation, _, _ = DOCUMENTS[kind]
             code, label, wire_type = EXAMPLES[kind]
             type_index = list(EXAMPLES).index(kind)
             # Vary hidden examples by type so Planning retains data in every month.

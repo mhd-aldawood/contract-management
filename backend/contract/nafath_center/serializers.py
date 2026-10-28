@@ -1,6 +1,8 @@
 import json
 
 from rest_framework import serializers
+from contract.costs import CostTableField, AgreementCostMixin
+from contract.order_counts import AgreementOrderCountMixin
 from .models import NafathCenterAgreement, PaymentScheduleRow
 
 
@@ -28,7 +30,9 @@ class PaymentScheduleRowSerializer(serializers.ModelSerializer):
         return value
 
 
-class NafathCenterAgreementSerializer(serializers.ModelSerializer):
+class NafathCenterAgreementSerializer(AgreementCostMixin, AgreementOrderCountMixin, serializers.ModelSerializer):
+    orderCount = serializers.SerializerMethodField()
+    costTable = CostTableField(source='cost_table', required=False)
     # ---- nested rows: wire key "paymentSchedule" → model attr "payment_schedule"
     paymentSchedule  = PaymentScheduleRowSerializer(
         source='payment_schedule',
@@ -54,6 +58,7 @@ class NafathCenterAgreementSerializer(serializers.ModelSerializer):
         model = NafathCenterAgreement
         # list every wire field you want exposed
         fields = [
+            'orderCount', 'costTable',
             'id', 'type', 'agreementNumber', 'name', 'companyName', 'subject',
              'estimatedCost', 'startDate', 'endDate', 'reminderDate',
             'paymentMethod', 'paymentText', 'paymentSchedule',

@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from contract.api.responses import success_response
 from contract.rbac import HasFeaturePermission
+from contract.order_counts import with_order_counts
 from contract.life_long.serializers import LifeLongAgreementSerializer
 from contract.life_long.models import LifeLongAgreement
 
@@ -37,7 +38,7 @@ class LifeLongListView(APIView):
     feature_code = 'lifelong-learning'
 
     def get(self, request):
-        agreements = LifeLongAgreement.objects.all().order_by('-pk')
+        agreements = with_order_counts(LifeLongAgreement.objects.all(), request).prefetch_related('payment_schedule').order_by('-pk')
         data = LifeLongAgreementSerializer(agreements, many=True, context={'request': request}).data
         return success_response(request=request, code='request.success', data=data,
                                 total_count=len(data), page_size=len(data))

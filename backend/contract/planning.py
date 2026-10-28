@@ -15,6 +15,9 @@ from contract.nafath_center.serializers import NafathCenterAgreementSerializer
 from contract.other.models import Agreement
 from contract.other.serializers import AgreementSerializer
 from contract.rbac import HasFeaturePermission
+from contract.doctoral_models import DoctoralContract
+from contract.doctoral import DoctoralContractSerializer
+from contract.order_counts import with_order_counts
 
 
 def planning_today():
@@ -42,6 +45,7 @@ class PlanningAgreementListView(APIView):
             raise ValidationError({'phase': ['الحالة غير صالحة']})
 
         sources = [
+            ('doctoral-contracts', 'عقود الدكتوراه', DoctoralContract, DoctoralContractSerializer, {}, None),
             ('nafath-centers', 'اتفاقيات مراكز النفاذ', NafathCenterAgreement, NafathCenterAgreementSerializer, {}, 'payment_schedule'),
             ('memorandum', 'مذكرات التفاهم', Agreement, AgreementSerializer, {'type': 'memorandum'}, 'rows'),
             ('lifelong-learning', 'اتفاقيات التعلم مدى الحياة', LifeLongAgreement, LifeLongAgreementSerializer, {}, 'payment_schedule'),
@@ -52,7 +56,7 @@ class PlanningAgreementListView(APIView):
         data = []
         for feature, category, model, serializer_class, filters, relation in sources:
             # Enforce Planning visibility before serialization, for every role.
-            records = model.objects.filter(is_hidden=False, **filters).prefetch_related(relation)
+            records = with_order_counts(model.objects.filter(is_hidden=False, **filters), request).prefetch_related(relation)
             for record in records:
                 phase = agreement_phase(record.start_date, record.end_date, today)
                 if phase_filter and phase != phase_filter:

@@ -4,6 +4,8 @@ from .message_catalog import resolve_message
 
 
 ERROR_CODES_BY_STATUS = {
+    409: 'file.grant_used',
+    410: 'file.grant_expired',
     400: "request.validation_failed",
     401: "auth.unauthenticated",
     403: "auth.permission_denied",

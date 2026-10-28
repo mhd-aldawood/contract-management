@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from contract.api.responses import success_response
 from contract.rbac import HasFeaturePermission
+from contract.order_counts import with_order_counts
 from .models import NafathCenterAgreement
 from .serializers import NafathCenterAgreementSerializer
 
@@ -39,7 +40,7 @@ class NafathCenterListView(APIView):
     feature_code = 'nafath-centers'
 
     def get(self, request, *args, **kwargs):
-        qs = NafathCenterAgreement.objects.all()
+        qs = with_order_counts(NafathCenterAgreement.objects.all(), request).prefetch_related('payment_schedule')
         serializer = NafathCenterAgreementSerializer(
             qs, many=True, context={'request': request}
         )

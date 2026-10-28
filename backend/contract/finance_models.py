@@ -1,10 +1,16 @@
+from functools import reduce
+from operator import or_
+
 from django.conf import settings
 from django.db import models
 
 from contract.helper import UploadToPath
 
 
+ORDER_RELATIONS = ('nafath_agreement', 'lifelong_agreement', 'educational_agreement', 'other_agreement', 'doctoral_contract')
+
 class DisbursementOrder(models.Model):
+    doctoral_contract = models.ForeignKey('contract.DoctoralContract', null=True, blank=True, on_delete=models.CASCADE, related_name='disbursement_orders')
     nafath_agreement = models.ForeignKey('contract.NafathCenterAgreement', null=True, blank=True, on_delete=models.CASCADE, related_name='disbursement_orders')
     lifelong_agreement = models.ForeignKey('contract.LifeLongAgreement', null=True, blank=True, on_delete=models.CASCADE, related_name='disbursement_orders')
     educational_agreement = models.ForeignKey('contract.EducationalContent', null=True, blank=True, on_delete=models.CASCADE, related_name='disbursement_orders')
@@ -23,10 +29,5 @@ class DisbursementOrder(models.Model):
     class Meta:
         ordering = ['-created_at', '-pk']
         constraints = [models.CheckConstraint(
-            condition=(
-                models.Q(nafath_agreement__isnull=False, lifelong_agreement__isnull=True, educational_agreement__isnull=True, other_agreement__isnull=True)
-                | models.Q(nafath_agreement__isnull=True, lifelong_agreement__isnull=False, educational_agreement__isnull=True, other_agreement__isnull=True)
-                | models.Q(nafath_agreement__isnull=True, lifelong_agreement__isnull=True, educational_agreement__isnull=False, other_agreement__isnull=True)
-                | models.Q(nafath_agreement__isnull=True, lifelong_agreement__isnull=True, educational_agreement__isnull=True, other_agreement__isnull=False)
-            ), name='disbursement_order_one_agreement',
+            condition=reduce(or_, [models.Q(**{field + '__isnull': field != selected for field in ORDER_RELATIONS}) for selected in ORDER_RELATIONS]), name='disbursement_order_one_agreement',
         )]

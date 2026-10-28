@@ -23,6 +23,9 @@ class Agreement(models.Model):
     reminder_date = models.DateField(null=True, blank=True)
 
     is_hidden = models.BooleanField(default=False)
+    cost_table = models.JSONField(default=list, blank=True)
+    payment_method = models.CharField(max_length=16, blank=True, default='')
+    payment_text = models.TextField(blank=True, default='')
 
     # ---- file ----------------------------------------------------------
     file_name = models.CharField(max_length=255, blank=True, default="")

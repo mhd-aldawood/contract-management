@@ -10,6 +10,7 @@ from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from contract.finance import DOCUMENTS
+from contract.management.commands.seed_demo_data import EXAMPLES
 from contract.finance_models import DisbursementOrder
 from contract.models import Role
 from contract.planning import agreement_phase
@@ -30,7 +31,8 @@ class DemoDataTests(APITestCase):
 
     def test_creates_eight_examples_per_type_with_dates_files_and_orders(self):
         self.seed()
-        for kind, (model, _, filters, _) in DOCUMENTS.items():
+        for kind in EXAMPLES:
+            model, _, filters, _ = DOCUMENTS[kind]
             records = model.objects.filter(agreement_number__startswith='DEMO-', **filters)
             self.assertEqual(records.count(), 8, kind)
             self.assertEqual(records.filter(is_hidden=True).count(), 2)

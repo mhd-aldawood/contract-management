@@ -86,7 +86,7 @@ REST_FRAMEWORK = {
         'contract.api.renderers.UnifiedJSONRenderer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'contract.authentication.SessionTokenAuthentication',
        #'rest_framework_simplejwt.authentication.JWTAuthentication',
 
     ],
@@ -224,10 +224,9 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
-CORS_ALLOW_CREDENTIALS = (
-    os.environ.get("CORS_ALLOW_CREDENTIALS", "False").lower()
-    in {"1", "true", "yes", "on"}
-)
+CORS_ALLOW_CREDENTIALS = True
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = (*default_headers, 'x-refresh-csrf', 'x-download-grant')
 
 
 LOG_DIR = BASE_DIR / 'logs'
@@ -333,3 +332,6 @@ LOGGING = {
 # logger.warning('payment_text empty for agreement %s', agreement.id)
 # logger.error('failed to save rows', exc_info=True)          # includes traceback
 # logger.exception('boom')
+
+# Optional independent key; otherwise derive a separate signing key from SECRET_KEY.
+FILE_DOWNLOAD_SIGNING_KEY = os.getenv("FILE_DOWNLOAD_SIGNING_KEY", "")

@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from rest_framework import status
-from rest_framework.authtoken.models import Token
+from contract.authentication import issue_session
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework.views import APIView
@@ -37,10 +37,10 @@ class AgreementSaveResponseTests(APITestCase):
             username="api-test-user",
             password="test-password",
         )
-        token = Token.objects.get(user=user)
+        _, token, _ = issue_session(user)
         user.profile.role = Role.objects.get(code="admin")
         user.profile.save(update_fields=["role"])
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
 
     def tearDown(self):
         self.settings_override.disable()
@@ -85,7 +85,7 @@ class AgreementSaveResponseTests(APITestCase):
         self.assertEqual(response.data["message"], "تم حفظ اتفاقية مركز نفاذ بنجاح")
         self.assertEqual(response.data["data"]["fileName"], "agreement.txt")
         self.assertEqual(response.data["data"]["reminderDate"], "2026-10-10")
-        self.assertTrue(response.data["data"]["file"])
+        self.assertTrue(response.data["data"]["hasFile"])
         self.assertTrue(UNIFIED_RESPONSE_KEYS.issubset(response.data))
 
     def test_lifelong_save_uses_name_and_investment_wire_values(self):
@@ -402,8 +402,8 @@ class RoleBasedAccessControlTests(APITestCase):
         return user
 
     def _authenticate(self, user):
-        token = Token.objects.get(user=user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        _, token, _ = issue_session(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
 
     def test_user_without_role_cannot_read_contract_feature(self):
         self._authenticate(self._create_user("no-role-user"))
@@ -542,6 +542,7 @@ class RoleBasedAccessControlTests(APITestCase):
         )
         self.assertEqual(changed.status_code, status.HTTP_200_OK)
         self.assertFalse(changed.data["data"]["mustChangePassword"])
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {changed.data['data']['token']}")
 
         allowed = self.client.post(
             "/api/nafath-center/create",

@@ -8,6 +8,7 @@ from rest_framework.test import APITestCase
 
 from contract.finance_models import DisbursementOrder
 from contract.models import Role, RolePermission
+from contract.test_helpers import authenticate_session, grant_headers, close_download
 from contract.nafath_center.models import NafathCenterAgreement
 from contract.other.models import Agreement
 
@@ -21,7 +22,7 @@ class FinanceOrderTests(APITestCase):
         self.addCleanup(settings.disable)
         self.user = get_user_model().objects.create_user(username='finance-user', password='test-password')
         self.set_role('finance')
-        self.client.force_authenticate(self.user)
+        authenticate_session(self.client, self.user)
         self.agreement = NafathCenterAgreement.objects.create(name='Agreement', agreement_number='FN-1', company_name='Company', subject='Agreement details', is_hidden=True)
         self.url = f'/api/finance/agreements/nafath-centers/{self.agreement.pk}/orders/'
 
@@ -61,10 +62,10 @@ class FinanceOrderTests(APITestCase):
         self.assertEqual(updated.data['data']['fileName'], 'replacement.pdf')
         self.assertFalse(storage.exists(original_name))
         self.assertEqual(DisbursementOrder.objects.filter(is_removed=False).count(), 2)
-        downloaded = self.client.get(f'{self.url}{order_id}/file/')
+        downloaded = self.client.get(f'{self.url}{order_id}/file/', **grant_headers(self.client, 'nafath-centers', self.agreement.pk, order_id, 'finance'))
         self.assertEqual(b''.join(downloaded.streaming_content), b'replacement content')
         self.assertIn('attachment;', downloaded['Content-Disposition'])
-        downloaded.close()
+        close_download(downloaded)
 
     def test_remove_affects_only_one_order_and_blocks_its_download(self):
         created = self.upload([self.file('first.pdf'), self.file('second.pdf')])
@@ -73,7 +74,7 @@ class FinanceOrderTests(APITestCase):
         self.assertEqual(removed.status_code, 200)
         self.assertEqual(self.client.get(self.url).data['totalCount'], 1)
         self.assertEqual(self.client.get('/api/finance/agreements/').data['data'][0]['orderCount'], 1)
-        self.assertEqual(self.client.get(f'{self.url}{order_id}/file/').status_code, 404)
+        self.assertEqual(self.client.post('/api/files/grants/', {'kind': 'nafath-centers', 'agreementId': self.agreement.pk, 'orderId': order_id, 'scope': 'finance'}, format='json').status_code, 404)
         self.assertTrue(DisbursementOrder.objects.get(pk=order_id).is_removed)
         self.assertEqual(self.client.delete(f'{self.url}{order_id}/').status_code, 404)
 
@@ -82,7 +83,7 @@ class FinanceOrderTests(APITestCase):
         order_id = created.data['data'][0]['id']
         other = NafathCenterAgreement.objects.create(name='Another', agreement_number='FN-2', company_name='Company')
         other_url = f'/api/finance/agreements/nafath-centers/{other.pk}/orders/{order_id}/'
-        self.assertEqual(self.client.get(f'{other_url}file/').status_code, 404)
+        self.assertEqual(self.client.post('/api/files/grants/', {'kind': 'nafath-centers', 'agreementId': other.pk, 'orderId': order_id, 'scope': 'finance'}, format='json').status_code, 404)
         self.assertEqual(self.client.patch(other_url, {'file': self.file()}, format='multipart').status_code, 404)
         self.assertEqual(self.client.delete(other_url).status_code, 404)
 
@@ -110,9 +111,9 @@ class FinanceOrderTests(APITestCase):
         order_id = self.upload().data['data'][0]['id']
         self.set_role('dean')
         self.assertEqual(self.client.get(self.url).status_code, 200)
-        response = self.client.get(f'{self.url}{order_id}/file/')
+        response = self.client.get(f'{self.url}{order_id}/file/', **grant_headers(self.client, 'nafath-centers', self.agreement.pk, order_id, 'finance'))
         self.assertEqual(response.status_code, 200)
-        response.close()
+        close_download(response)
         self.assertEqual(self.upload().status_code, 403)
         self.assertEqual(self.client.patch(f'{self.url}{order_id}/', {'file': self.file()}, format='multipart').status_code, 403)
         self.assertEqual(self.client.delete(f'{self.url}{order_id}/').status_code, 403)

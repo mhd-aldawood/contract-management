@@ -116,7 +116,7 @@ class DashboardView(APIView):
             for row in orders.filter(created_at__gte=first_month, created_at__lt=next_month).order_by().annotate(
                     month=TruncMonth('created_at', tzinfo=DAMASCUS)).values('month').annotate(count=Count('pk')):
                 monthly[row['month'].strftime('%Y-%m')]['orders'] = row['count']
-            for order in orders.select_related('nafath_agreement', 'lifelong_agreement', 'educational_agreement', 'other_agreement')[:5]:
+            for order in orders.select_related('nafath_agreement', 'lifelong_agreement', 'educational_agreement', 'other_agreement', 'doctoral_contract')[:5]:
                 for kind, (_, relation, filters, label) in DOCUMENTS.items():
                     agreement = getattr(order, relation)
                     if agreement is None or any(getattr(agreement, key) != value for key, value in filters.items()):

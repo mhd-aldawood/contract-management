@@ -11,9 +11,11 @@ from contract.finance_models import DisbursementOrder
 from contract.life_long.serializers import LifeLongAgreementSerializer
 from contract.nafath_center.serializers import NafathCenterAgreementSerializer
 from contract.other.serializers import AgreementSerializer
+from contract.doctoral import DoctoralContractSerializer
 
 
 SERIALIZERS = {
+    'doctoral-contracts': DoctoralContractSerializer,
     'nafath-centers': NafathCenterAgreementSerializer,
     'lifelong-learning': LifeLongAgreementSerializer,
     'educational-content': EducationalContentSerializer,

@@ -1,5 +1,7 @@
 # educational_contents/serializers.py
 from rest_framework import serializers
+from contract.costs import CostTableField, AgreementCostMixin
+from contract.order_counts import AgreementOrderCountMixin
 from .models import EducationalContent, PaymentScheduleItem
 
 import json
@@ -17,7 +19,9 @@ class PaymentScheduleItemSerializer(serializers.ModelSerializer):
         fields = ["id", "label", "amount", "dueDate", "order"]
 
 
-class EducationalContentSerializer(serializers.ModelSerializer):
+class EducationalContentSerializer(AgreementCostMixin, AgreementOrderCountMixin, serializers.ModelSerializer):
+    orderCount = serializers.SerializerMethodField()
+    costTable = CostTableField(source='cost_table', required=False)
     agreementNumber   = serializers.CharField(source="agreement_number", required=False, allow_blank=True)
     companyName       = serializers.CharField(source="company_name", required=False, allow_blank=True)
     additionalCourses = serializers.CharField(source="additional_courses", required=False, allow_blank=True)
@@ -44,6 +48,7 @@ class EducationalContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationalContent
         fields = [
+            'orderCount', 'costTable',
             "id", "type",
             "agreementNumber", "name", "companyName", "subject",
             "additionalCourses", "estimatedCost", "startDate", "endDate", "reminderDate",

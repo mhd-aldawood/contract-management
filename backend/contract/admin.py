@@ -5,12 +5,18 @@ from .educational_content.models import EducationalContent, PaymentScheduleItem
 from .nafath_center.models import PaymentScheduleRow, NafathCenterAgreement
 from .other.models import AgreementRow, Agreement
 from .models import Profile, Role, RolePermission
+from .doctoral_models import DoctoralContract
+
+@admin.register(DoctoralContract)
+class DoctoralContractAdmin(admin.ModelAdmin):
+    list_display = ('agreement_number', 'name', 'doctor_rank', 'duration', 'is_hidden')
+    search_fields = ('agreement_number', 'name', 'subject', 'commencement_order')
 
 
 class RolePermissionInline(admin.TabularInline):
     model = RolePermission
     extra = 0
-    fields = ('feature', 'can_read', 'can_write')
+    fields = ('feature', 'can_read', 'can_write', 'can_download')
 
 
 @admin.register(Role)
