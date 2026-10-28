@@ -1,3 +1,4 @@
+import { getAccessToken } from '@/core/api/authSession'
 import { createLogger } from "@/core/logger";
 import { API_URLS } from "@/core/config/apiUrls";
 import {apiRequest} from "@/core/api/apiClient.js";
@@ -23,7 +24,7 @@ export default class OtherAgreementRemoteDataSource {
         for (const [key, value] of Object.entries(payload)) {
             if (key === "file" ||key === "id"   || key === "rows" || key === "fileName"  ) continue;
             if (value === null || value === undefined) continue;
-            fd.append(key, typeof value === "boolean" ? String(value) : value);
+            fd.append(key, key === "costTable" ? JSON.stringify(value) : typeof value === "boolean" ? String(value) : value);
         }
 
 
@@ -36,7 +37,7 @@ export default class OtherAgreementRemoteDataSource {
 
         fd.append("rows", JSON.stringify(form.rows ?? []))
 
-        const token = localStorage.getItem("access_token");
+        const token = getAccessToken();
 
         const saved = await this._request(form.type === 'memorandum' ? API_URLS.memorandum.create : API_URLS.otherAgreement.create, {
             method: "POST",

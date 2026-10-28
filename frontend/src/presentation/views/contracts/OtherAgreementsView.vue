@@ -43,6 +43,9 @@
       </div>
       </section>
 
+      <section class="agreement-form-section"><h3>التكلفة</h3>
+        <FormRow v-slot="{ inputId }" label="طريقة التكلفة"><PaymentSection :input-id="inputId" :form="form" /></FormRow>
+      </section>
       <section class="agreement-form-section agreement-clauses">
         <div class="panel-heading"><h3>بنود الاتفاقية</h3><button type="button" class="btn--secondary btn--sm" @click="addRow">إضافة بند</button></div>
         <section v-for="(row, index) in form.rows" :key="row.id" class="agreement-clause">
@@ -68,7 +71,7 @@
       <div class="content-actions-row">
         <ContractActions class="contract-actions" :upload-disabled="!canWrite" @print="handlePrint" @upload="handleUpload" />
 
-        <FileChip :file-name="form.fileName" :file-url="form.fileUrl" :removable="canWrite" @remove="handleClearFile" />
+        <FileChip :file-name="form.fileName" :removable="canWrite" @remove="handleClearFile" />
 
       </div>
       </section>
@@ -88,6 +91,8 @@
 </template>
 
 <script setup>
+import FormRow from '@/presentation/components/FormRow.vue'
+import PaymentSection from '@/presentation/components/PaymentSection.vue'
 import { watch } from 'vue'
 import ModalFormActions from '@/presentation/components/ModalFormActions.vue'
 import ContractActions from '@/presentation/components/educationalcontent/ContractActions.vue'

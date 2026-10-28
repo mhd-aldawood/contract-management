@@ -1,4 +1,6 @@
 <script setup>
+import { getAccessToken } from '@/core/api/authSession'
+
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { API_URLS } from '@/core/config/apiUrls'
 import { apiRequest } from '@/core/api/apiClient'
@@ -60,7 +62,7 @@ const stats = computed(() => {
 })
 const links = computed(() => {
   const priority = { admin: ['users', 'roles', 'dean', 'finance', 'planning', 'settings'], dean: ['dean', 'finance', 'planning'],
-    finance: ['finance', 'planning'], contract: ['nafath-centers', 'memorandum', 'lifelong-learning', 'other-agreements', 'educational-content', 'planning'], planning: ['planning'] }[mode.value] || []
+    finance: ['finance', 'planning'], contract: ['nafath-centers', 'memorandum', 'lifelong-learning', 'other-agreements', 'educational-content', 'doctoral-contracts', 'planning'], planning: ['planning'] }[mode.value] || []
   return NAV_GROUPS.filter(group => !group.adminOnly || isAdmin.value).flatMap(group => group.items)
     .filter(item => item.name !== 'home' && !['profile', 'about'].includes(item.name) && (!item.adminOnly || isAdmin.value) &&
       (!item.hideForAdmin || !isAdmin.value) && (!item.feature || canRead(item.feature)))
@@ -91,7 +93,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const response = await apiRequest(API_URLS.dashboard, { headers: { Authorization: 'Token ' + localStorage.getItem('access_token') } })
+    const response = await apiRequest(API_URLS.dashboard, { headers: { Authorization: 'Token ' + getAccessToken() } })
     if (version === requestVersion) dashboard.value = response.data
   } catch (e) { if (version === requestVersion) error.value = e.message }
   finally { if (version === requestVersion) loading.value = false }

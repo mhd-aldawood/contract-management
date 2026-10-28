@@ -90,7 +90,7 @@
         <h3>مرفق الاتفاقية</h3>
           <div class="actions-row">
             <ContractActions class="contract-actions" @print="handlePrint" @upload="handleUpload" />
-            <FileChip :file-name="form.fileName"  :file-url="form.fileUrl" @remove="handleClearFile" />
+            <FileChip :file-name="form.fileName"  @remove="handleClearFile" />
           </div>
       </section>
       </fieldset>

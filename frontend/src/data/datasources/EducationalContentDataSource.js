@@ -1,3 +1,4 @@
+import { getAccessToken } from '@/core/api/authSession'
 // src/data/datasources/EducationalContentDataSource.js
 import { API_URLS } from "@/core/config/apiUrls";
 import { createLogger } from "@/core/logger";
@@ -26,7 +27,7 @@ export default class EducationalContentDataSource {
     for (const [key, value] of Object.entries(payload)) {
       if (key === "file" || key === "paymentSchedule" || key === "id") continue;
       if (value === null || value === undefined) continue;
-      fd.append(key, typeof value === "boolean" ? String(value) : value);
+      fd.append(key, key === "costTable" ? JSON.stringify(value) : typeof value === "boolean" ? String(value) : value);
     }
 
     if (Array.isArray(payload.paymentSchedule)) {
@@ -40,7 +41,7 @@ export default class EducationalContentDataSource {
       log.debug("No File on agreement — upload will skip the file");
     }
 
-    const token = localStorage.getItem("access_token");
+    const token = getAccessToken();
 
     const saved = await this._request(API_URLS.educationalContents.create, {
       method: "POST",
@@ -52,32 +53,7 @@ export default class EducationalContentDataSource {
     return saved;
   }
 
-  // ---------------- localStorage read side ----------------
-  _readAll() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    } catch {
-      return [];
-    }
-  }
-
-  _writeAll(list) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  }
-
-  async getAll() {
-    return this._readAll();
-  }
-
-  async getByType(type) {
-    log.debug("EducationalContentDataSource getByType" + type);
-
-    return this._readAll().filter((a) => a.type === type);
-  }
-
-  async remove(id) {
-    const list = this._readAll().filter((a) => a.id !== id);
-    this._writeAll(list);
-    return true;
-  }
+  async getAll() { return (await this._request(API_URLS.educationalContents.list)).data }
+  async getByType() { return this.getAll() }
+  async remove(id) { return this._request(API_URLS.educationalContents.byId(id), { method: 'DELETE' }) }
 }

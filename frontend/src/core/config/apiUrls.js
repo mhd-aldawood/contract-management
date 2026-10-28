@@ -1,12 +1,26 @@
 // src/core/config/apiUrls.js
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+const configuredApiUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+const localHost = host => host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost')
+const useLocalGateway = typeof window !== 'undefined' && localHost(window.location.hostname) &&
+  (!configuredApiUrl || localHost(new URL(configuredApiUrl, window.location.origin).hostname))
+const API_BASE_URL = useLocalGateway ? '' : configuredApiUrl;
 
 export const API_URLS = {
+  contractRequests: { list: `${API_BASE_URL}/api/contract-requests/`, byId: id => `${API_BASE_URL}/api/contract-requests/${id}/` },
+  doctoralContracts: { list: `${API_BASE_URL}/api/doctoral-contracts/`, byId: id => `${API_BASE_URL}/api/doctoral-contracts/${id}/` },
   base: API_BASE_URL,
   dashboard: `${API_BASE_URL}/api/dashboard/`,
+  securitySettings: `${API_BASE_URL}/api/security-settings/`,
+  fileGrant: `${API_BASE_URL}/api/files/grants/`,
+  agreementOrders: {
+    list: (kind, id, scope = 'agreement') => `${API_BASE_URL}/api/agreement-orders/${encodeURIComponent(kind)}/${id}/?scope=${encodeURIComponent(scope)}`,
+    download: (kind, id, orderId, scope = 'agreement') => `${API_BASE_URL}/api/agreement-orders/${encodeURIComponent(kind)}/${id}/${orderId}/file/?scope=${encodeURIComponent(scope)}`,
+  },
 
   auth: {
+    csrf: `${API_BASE_URL}/api/auth/csrf/`,
+    refresh: `${API_BASE_URL}/api/auth/token/refresh/`,
     login: `${API_BASE_URL}/api/auth/login/`,
     logout: `${API_BASE_URL}/api/auth/logout/`,
     me: `${API_BASE_URL}/api/auth/me/`,

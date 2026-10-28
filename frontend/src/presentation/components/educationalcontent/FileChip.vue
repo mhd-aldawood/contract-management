@@ -6,42 +6,24 @@ defineProps({
     type: String,
     default: '',
   },
-  /** Optional server URL. Shows the "تحميل" link when set. */
-  fileUrl: {
-    type: String,
-    default: '',
-  },
   /** Icon shown before the name. */
   icon: {
     type: String,
     default: '📎',
-  },
-  /** Label of the download link. */
-  downloadLabel: {
-    type: String,
-    default: 'تحميل',
   },
   /** Show the remove (✕) button. */
   removable: {
     type: Boolean,
     default: true,
   },
-  /** Show the download link when fileUrl exists. */
-  downloadable: {
-    type: Boolean,
-    default: true,
-  },
 })
 
-const emit = defineEmits(['remove', 'download'])
+const emit = defineEmits(['remove'])
 
 function onRemove() {
   emit('remove')
 }
 
-function onDownload(event) {
-  emit('download', { url: event.currentTarget.href })
-}
 </script>
 
 <template>
@@ -50,16 +32,6 @@ function onDownload(event) {
 
     <span class="file-name" :title="fileName">{{ fileName }}</span>
 
-    <!-- <a
-      v-if="downloadable && fileUrl"
-      :href="fileUrl"
-      target="_blank"
-      rel="noopener"
-      class="file-link"
-      @click="onDownload"
-    >
-      {{ downloadLabel }}
-    </a> -->
 
     <button
       v-if="removable"
@@ -94,16 +66,6 @@ function onDownload(event) {
 
 .file-name {
   white-space: nowrap;
-}
-
-.file-link {
-  color: var(--color-info);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.file-link:hover {
-  text-decoration: underline;
 }
 
 .file-remove {

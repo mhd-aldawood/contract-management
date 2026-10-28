@@ -10,6 +10,9 @@ export class OtherAgreement {
     reminderDate = '',
     isHidden = false,
     rows = [],
+    costTable = [],
+    paymentMethod = '',
+    paymentText = '',
     fileName = '',
     fileUrl = '',                       // ← ADD (was in empty() but not here)
     file = null,
@@ -21,6 +24,9 @@ export class OtherAgreement {
     this.endDate = endDate || ''
     this.reminderDate = reminderDate || ''
     this.isHidden = Boolean(isHidden)
+    this.paymentMethod = paymentMethod
+    this.paymentText = paymentText
+    this.costTable = costTable
     this.rows = rows.map((r) =>
       r instanceof OtherAgreementRow ? r : new OtherAgreementRow(r)
     )
@@ -38,7 +44,10 @@ export class OtherAgreement {
       endDate: '',
       reminderDate: '',
       isHidden: false,
-      rows: [],                          // ← ADD (the important one)
+      rows: [],
+      costTable: [],
+      paymentMethod: '',
+      paymentText: '',                          // ← ADD (the important one)
       fileName: '',
       file: null,
     }
@@ -63,6 +72,9 @@ export class OtherAgreement {
       endDate: this.endDate,
       reminderDate: this.reminderDate,
       isHidden: this.isHidden,
+      costTable: this.costTable,
+      paymentMethod: this.paymentMethod,
+      paymentText: this.paymentText,
       rows: this.rows.map((r) =>
         r instanceof OtherAgreementRow ? r.toJSON() : r
       ),

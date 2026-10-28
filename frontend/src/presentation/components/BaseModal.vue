@@ -17,7 +17,7 @@
           :aria-labelledby="titleId"
           :aria-describedby="description ? descriptionId : undefined"
           tabindex="-1"
-          @keydown.esc="requestClose"
+          @keydown.esc.stop="requestClose"
           @keydown.tab="trapFocus"
         >
           <header class="base-modal__header">
@@ -58,7 +58,7 @@ const openDialogs = new Set()
 </script>
 
 <script setup>
-import { nextTick, onBeforeUnmount, provide, ref, useId, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, provide, ref, useId, watch } from 'vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -93,6 +93,14 @@ function requestClose() {
   emit('close')
 }
 
+function handleEscape(event) {
+  // Downloads or refreshed content can move focus out of the dialog.
+  if (event.key === 'Escape' && !event.defaultPrevented && props.modelValue && [...openDialogs].at(-1) === id) {
+    event.preventDefault()
+    requestClose()
+  }
+}
+
 function releaseScrollLock() {
   openDialogs.delete(id)
   document.body.classList.toggle('modal-open', openDialogs.size > 0)
@@ -109,5 +117,9 @@ watch(() => props.modelValue, async (open) => {
   } else previousFocus?.focus?.()
 }, { immediate: true })
 
-onBeforeUnmount(releaseScrollLock)
+onMounted(() => document.addEventListener('keydown', handleEscape))
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleEscape)
+  releaseScrollLock()
+})
 </script>

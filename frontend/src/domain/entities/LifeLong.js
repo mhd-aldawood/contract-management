@@ -11,6 +11,7 @@ export class LifeLong {
     paymentMethod = "", // '' | 'text' | 'table'
     paymentText = "",
     paymentSchedule = [],
+    costTable = [],
     status = "",
     disbursement = "",
     budgetType = "current",
@@ -29,6 +30,7 @@ export class LifeLong {
     this.paymentMethod = paymentMethod;
     this.paymentText = paymentText;
     this.paymentSchedule = paymentSchedule;
+    this.costTable = costTable
     this.status = status;
     this.disbursement = disbursement;
     this.budgetType = budgetType;
@@ -50,6 +52,7 @@ export class LifeLong {
     paymentMethod: '',
     paymentText: '',
     paymentSchedule: [],
+      costTable: [],
     status: '',
     disbursement: '',
     budgetType: 'current',

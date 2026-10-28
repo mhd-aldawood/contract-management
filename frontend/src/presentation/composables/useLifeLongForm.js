@@ -1,3 +1,4 @@
+import { validCostTable } from '@/presentation/utils/agreementCosts'
 // src/presentation/composables/useNafathCentersForm.js
 import { reactive, ref, computed } from 'vue';
 import { LifeLong } from '@/domain/entities/LifeLong';
@@ -34,7 +35,7 @@ export function useLifeLongForm(type = 'life-long') {
   const hasPaymentErrors = computed(() =>
     paymentErrors.value.some((row) => Object.keys(row).length > 0)
   )
-  const isFormValid = computed(() => isValid.value && !hasPaymentErrors.value)
+  const isFormValid = computed(() => isValid.value && !hasPaymentErrors.value && validCostTable(form))
 
   /* ---------- mutation helpers ---------- */
     function reset() {

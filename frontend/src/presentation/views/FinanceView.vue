@@ -1,4 +1,7 @@
 <script setup>
+import { downloadDocument } from '@/core/api/fileDownloads'
+import { getAccessToken } from '@/core/api/authSession'
+
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { API_URLS } from '@/core/config/apiUrls'
@@ -8,11 +11,12 @@ import { useFeatureAccess } from '@/presentation/composables/useFeatureAccess'
 import { useNotifications } from '@/presentation/composables/useNotifications'
 import PageHeader from '@/presentation/components/PageHeader.vue'
 
-const { canWrite } = useFeatureAccess('finance')
+const { canWrite, canDownload } = useFeatureAccess('finance')
 const route = useRoute()
 const notify = useNotifications()
 const agreements = ref([])
 const query = ref('')
+const financeOrders = ref('')
 const kind = ref(CONTRACT_TYPES.some(type => type.feature === route.query.type) ? route.query.type : '')
 const loading = ref(false)
 const error = ref('')
@@ -31,9 +35,10 @@ const pendingRemoval = ref(null)
 const page = ref(1)
 const pageSize = 15
 const allowed = '.pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt'
-const headers = () => ({ Authorization: `Token ${localStorage.getItem('access_token')}` })
+const headers = () => ({ Authorization: `Token ${getAccessToken()}` })
 const filtered = computed(() => agreements.value.filter(agreement =>
   (!kind.value || agreement.feature === kind.value) &&
+  (!financeOrders.value || (agreement.orderCount > 0) === (financeOrders.value === 'with')) &&
   `${agreement.name} ${agreement.agreementNumber}`.toLowerCase().includes(query.value.trim().toLowerCase())))
 const pages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize)))
 const rows = computed(() => filtered.value.slice((Math.min(page.value, pages.value) - 1) * pageSize, Math.min(page.value, pages.value) * pageSize))
@@ -185,14 +190,7 @@ async function downloadOrder(order) {
   busy.value = true
   orderError.value = ''
   try {
-    const response = await fetch(API_URLS.finance.download(selected.value.feature, selected.value.id, order.id), { headers: headers() })
-    if (!response.ok) throw new Error('تعذر تنزيل الملف. تحقق من صلاحيتك ثم حاول مجدداً.')
-    const url = URL.createObjectURL(await response.blob())
-    const link = document.createElement('a')
-    link.href = url
-    link.download = order.fileName
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 0)
+    await downloadDocument({ ...selected.value, scope: 'finance', orderId: order.id, fileName: order.fileName })
   } catch (e) { orderError.value = e.message }
   finally { busy.value = false }
 }
@@ -217,7 +215,8 @@ onMounted(async () => {
       <div class="filters">
         <label class="form-field"><span>البحث</span><input v-model="query" type="search" placeholder="اسم العقد أو رقم الاتفاقية" @input="page = 1" /></label>
         <label class="form-field"><span>نوع الاتفاقية</span><select v-model="kind" @change="page = 1"><option value="">جميع الأنواع</option><option v-for="type in CONTRACT_TYPES" :key="type.feature" :value="type.feature">{{ type.title }}</option></select></label>
-        <button type="button" class="btn--secondary" @click="query = ''; kind = ''; page = 1">إلغاء الفلاتر</button>
+        <label class="form-field"><span>أوامر الصرف</span><select v-model="financeOrders" @change="page = 1"><option value="">الكل</option><option value="with">لديها أوامر صرف</option><option value="without">بدون أوامر صرف</option></select></label>
+        <button type="button" class="btn--secondary" @click="query = ''; kind = ''; financeOrders = ''; page = 1">إلغاء الفلاتر</button>
       </div>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <p class="result-count" aria-live="polite">عدد العقود والاتفاقيات: {{ filtered.length }}</p>
@@ -253,7 +252,7 @@ onMounted(async () => {
       <div class="table-scroll" :aria-busy="ordersLoading"><table class="finance-orders"><thead><tr><th>الملف</th><th>تاريخ الرفع</th><th>آخر تحديث</th><th>بواسطة</th><th>الإجراءات</th></tr></thead>
         <tbody><tr v-if="!selected"><td colspan="5" class="empty-state">لم يتم تحديد اتفاقية.</td></tr><tr v-else-if="ordersLoading"><td colspan="5" class="empty-state">جارٍ تحميل أوامر الصرف…</td></tr><tr v-else-if="!orders.length"><td colspan="5" class="empty-state">لم تُرفع أوامر صرف لهذه الاتفاقية بعد.</td></tr>
           <template v-for="order in !selected || ordersLoading ? [] : orders" :key="order.id"><tr><td class="finance-file-name"><strong>{{ order.title || order.fileName }}</strong><small class="finance-category">{{ order.fileName }} — {{ fileSize(order.fileSize) }}</small><p v-if="order.notes" class="finance-order-notes">{{ order.notes }}</p></td><td>{{ dateTime(order.createdAt) }}</td><td>{{ dateTime(order.updatedAt) }}</td><td>{{ order.updatedBy || order.uploadedBy }}</td>
-            <td><div class="table-actions"><button type="button" class="btn--secondary btn--sm" :disabled="busy" @click="downloadOrder(order)">تنزيل</button>
+            <td><div class="table-actions"><button type="button" class="btn--secondary btn--sm" :disabled="busy || !canDownload" @click="downloadOrder(order)">تنزيل</button>
               <template v-if="canWrite"><button type="button" class="btn--secondary btn--sm" :disabled="busy" @click="editOrder(order)">تعديل</button><label class="btn btn--secondary btn--sm finance-replace" :class="{ 'is-disabled': busy }"><span>استبدال الملف</span><input type="file" :accept="allowed" :disabled="busy" :aria-label="`استبدال ${order.fileName}`" @change="replaceFile(order, $event)" /></label><button type="button" class="btn--danger btn--sm" :disabled="busy" @click="pendingRemoval = order; editingOrder = null">إزالة</button></template>
             </div><div v-if="pendingRemoval?.id === order.id" class="finance-removal" role="alert"><p>إزالة هذا الأمر من الاتفاقية؟</p><div class="table-actions"><button type="button" class="btn--danger btn--sm" :disabled="busy" @click="removeOrder">تأكيد الإزالة</button><button type="button" class="btn--secondary btn--sm" :disabled="busy" @click="pendingRemoval = null">إلغاء</button></div></div></td>
           </tr><tr v-if="canWrite && editingOrder === order.id"><td colspan="5"><form class="finance-order-edit" @submit.prevent="saveOrderMetadata"><label class="form-field"><span>اسم أمر الصرف</span><input v-model="editForm.title" required maxlength="255" :disabled="busy" /></label><label class="form-field"><span>ملاحظات</span><textarea v-model="editForm.notes" rows="2" maxlength="2000" :disabled="busy"></textarea></label><div class="table-actions"><button type="submit" :disabled="busy || !editForm.title.trim()">حفظ التعديلات</button><button type="button" class="btn--secondary" :disabled="busy" @click="editingOrder = null">إلغاء</button></div></form></td></tr></template>

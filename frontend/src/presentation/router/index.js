@@ -1,8 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import container from '@/di/container'
+import { clearSession } from '@/core/api/authSession'
 import { ROUTE_PATHS, ROUTE_NAMES } from '@/core/config'
 
 const routes = [
+  { path: '/contracts/create', name: 'contract-requests', component: () => import('@/presentation/views/contracts/ContractRequestsView.vue'), meta: { requiresAuth: true, feature: 'contract-requests', action: 'read' } },
+  { path: '/contracts/doctoral-contracts', name: 'doctoral-contracts', component: () => import('@/presentation/views/contracts/ContractListView.vue'), props: { feature: 'doctoral-contracts' }, meta: { requiresAuth: true, feature: 'doctoral-contracts', action: 'read' } },
+  { path: '/admin/security', name: 'security', component: () => import('@/presentation/views/SecuritySettingsView.vue'), meta: { requiresAuth: true, feature: 'security-settings', adminOnly: true } },
   {
     path: ROUTE_PATHS.dean,
     name: ROUTE_NAMES.dean,
@@ -132,11 +136,11 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   let user = container.authRepository.getCurrentUser()
-  if (to.meta.requiresAuth && user) {
+  if (to.meta.requiresAuth) {
     try {
       user = await container.authRepository.ensureCurrentUser()
     } catch {
-      await container.authRepository.logout()
+      clearSession()
       return next({ name: ROUTE_NAMES.login })
     }
   }
@@ -155,5 +159,7 @@ router.beforeEach(async (to, from, next) => {
     next()
   }
 })
+
+window.addEventListener('auth:expired', () => { clearSession(); if (router.currentRoute.value.meta.requiresAuth) router.replace('/login') })
 
 export default router

@@ -1,3 +1,4 @@
+import { validCostTable } from '@/presentation/utils/agreementCosts'
 // src/presentation/composables/useEducationalContentForm.js
 import { ref, reactive, computed } from 'vue'
 import EducationalContent from '@/domain/entities/EducationalContent'
@@ -35,7 +36,7 @@ export function useEducationalContentForm(type = 'educational-content') {
     paymentErrors.value.some((row) => Object.keys(row).length > 0)
   )
 
-  const isFormValid = computed(() => isValid.value && !hasPaymentErrors.value)
+  const isFormValid = computed(() => isValid.value && !hasPaymentErrors.value && validCostTable(form))
 
   /* ---------- mutation helpers ---------- */
   function reset() {

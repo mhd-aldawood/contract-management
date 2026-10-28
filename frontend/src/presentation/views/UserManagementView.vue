@@ -132,6 +132,7 @@
               <span class="permission-preview__badges">
                 <StatusBadge v-if="selectedUserRole.permissions[feature.code]?.read" tone="info">قراءة</StatusBadge>
                 <StatusBadge v-if="selectedUserRole.permissions[feature.code]?.write" tone="success">كتابة</StatusBadge>
+                <StatusBadge v-if="selectedUserRole.permissions[feature.code]?.download" tone="info">تنزيل</StatusBadge>
                 <StatusBadge
                   v-if="!selectedUserRole.permissions[feature.code]?.read && !selectedUserRole.permissions[feature.code]?.write"
                   tone="neutral"

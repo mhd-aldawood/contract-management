@@ -14,7 +14,8 @@ export default class EducationalContent {
     reminderDate = '',
     paymentMethod = '',        // 'text' | 'table' | ''
     paymentText = '',
-    paymentSchedule = [],       // [{ label, amount, dueDate }]
+    paymentSchedule = [],
+    costTable = [],            // [{ years, percentage, details }]
     quarterlyDue = 0,
     status = '',
     disbursement = '',
@@ -39,6 +40,7 @@ export default class EducationalContent {
     this.paymentMethod = paymentMethod
     this.paymentText = paymentText
     this.paymentSchedule = paymentSchedule
+    this.costTable = costTable
     this.quarterlyDue = quarterlyDue
     this.status = status
     this.disbursement = disbursement
@@ -67,6 +69,7 @@ static empty(type = 'educational-content') {
     paymentMethod: '',
     paymentText: '',
     paymentSchedule: [],
+      costTable: [],
     quarterlyDue: 0,
     status: '',
     disbursement: '',

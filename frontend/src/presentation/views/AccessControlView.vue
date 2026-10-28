@@ -66,7 +66,7 @@
           <div class="panel-heading">
             <div>
               <h2>صلاحيات دور {{ selectedRole.name }}</h2>
-              <p>كل ميزة مستقلة. الكتابة تفعّل القراءة تلقائياً، وإلغاء القراءة يلغي الكتابة.</p>
+              <p>كل ميزة مستقلة. الكتابة والتنزيل يتطلبان القراءة. إلغاء القراءة يلغي الكتابة والتنزيل.</p>
             </div>
           </div>
           <div class="feature-list">
@@ -94,6 +94,7 @@
                   />
                   <span><strong>كتابة</strong><small>إضافة وتعديل وحذف</small></span>
                 </label>
+                <label v-if="feature.supportsDownload"><input type="checkbox" :checked="selectedRole.permissions[feature.code]?.download" :disabled="selectedRole.code === 'admin' || savingKey === `${selectedRole.code}:${feature.code}`" @change="changePermission(selectedRole, feature.code, 'download', $event.target.checked)" /><span><strong>تنزيل</strong><small>تنزيل الملفات المرفقة</small></span></label>
               </div>
             </article>
           </div>
@@ -174,8 +175,8 @@ async function load() {
 async function changePermission(role, feature, action, checked) {
   const current = role.permissions[feature] || { read: false, write: false }
   const next = { ...current, [action]: checked }
-  if (action === 'write' && checked) next.read = true
-  if (action === 'read' && !checked) next.write = false
+  if (['write', 'download'].includes(action) && checked) next.read = true
+  if (action === 'read' && !checked) { next.write = false; next.download = false }
 
   savingKey.value = `${role.code}:${feature}`
   error.value = ''
@@ -185,6 +186,7 @@ async function changePermission(role, feature, action, checked) {
       feature,
       read: next.read,
       write: next.write,
+      download: Boolean(next.download),
     })
   } catch (e) {
     error.value = e.message
@@ -261,7 +263,7 @@ onMounted(load)
 .feature-list { display: grid; gap: 0.65rem; }
 .feature-row { display: grid; grid-template-columns: minmax(14rem, 1fr) minmax(20rem, 1.4fr); gap: 1rem; align-items: center; padding: 0.9rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 .feature-identity { display: grid; gap: 0.2rem; }
-.permission-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.permission-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.65rem; }
 .permission-options label { display: flex; align-items: center; gap: 0.65rem; padding: 0.65rem; background: var(--color-muted-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .permission-options label > span { display: grid; gap: 0.15rem; }
 .permission-options small { color: var(--color-text-muted); font-size: 0.75rem; }

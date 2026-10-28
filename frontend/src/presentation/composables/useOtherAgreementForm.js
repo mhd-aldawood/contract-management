@@ -1,3 +1,4 @@
+import { validCostTable } from '@/presentation/utils/agreementCosts'
 import { reactive, ref, computed } from 'vue';
 import { OtherAgreement } from '@/domain/entities/OtherAgreement';
 import { otherAgreementSchema } from '@/presentation/validation/otherAgreementSchema';
@@ -25,7 +26,7 @@ export function useOtherAgreementForm(type = 'other-agreement') {
     reset: resetValidation,
   } = useFormValidation(form, otherAgreementSchema)
 
-  const isFormValid = computed(() => isValid.value)
+  const isFormValid = computed(() => isValid.value && validCostTable(form))
 
   /* ---------- mutation helpers ---------- */
     function reset() {

@@ -1,6 +1,7 @@
 // src/data/repositories/AuthRepositoryImpl.js
 import AuthRepository from "@/domain/repositories/AuthRepository";
 import User from "@/domain/entities/User";
+import { getAccessToken, refreshSession, clearSession } from '@/core/api/authSession'
 
 export default class AuthRepositoryImpl extends AuthRepository {
   constructor({ localDataSource, remoteDataSource }) {
@@ -10,10 +11,9 @@ export default class AuthRepositoryImpl extends AuthRepository {
     this.sessionVerified = false;
   }
 
-  async login({ username, password }) {
-    const data = await this.remote.login({ username, password });
+  async login({ username, password, rememberMe = false }) {
+    const data = await this.remote.login({ username, password, rememberMe });
     if (data.token) this.local.saveToken(data.token);
-    if (data.refresh) this.local.saveRefreshToken(data.refresh);
     const user = new User(data.user ?? { username });
 
     // ✅ استخدم saveSession الموجود
@@ -66,8 +66,10 @@ export default class AuthRepositoryImpl extends AuthRepository {
     return this.remote.updateUser(id, payload)
   }
   async ensureCurrentUser() {
-    const current = this.getCurrentUser()
-    if (!current || this.sessionVerified) return current
+    if (!getAccessToken()) {
+      const restored = await refreshSession()
+      if (!restored) return null
+    }
 
     const data = await this.remote.me()
     const user = new User(data)
@@ -76,8 +78,7 @@ export default class AuthRepositoryImpl extends AuthRepository {
     return user
   }
   async logout(){
-    this.local.clearSession()
-    this.local.clearTokens()
-    this.sessionVerified = false
+    try { await this.remote.logout() }
+    finally { clearSession(); this.sessionVerified = false }
   }
 }

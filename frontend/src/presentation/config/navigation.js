@@ -13,11 +13,13 @@ export const NAV_GROUPS = [
     key: 'contracts',
     label: 'العقود',
     items: [
+      { name: 'contract-requests', label: 'إضافة عقد', icon: '＋', path: '/contracts/create', feature: 'contract-requests' },
       { name: 'nafath-centers', label: 'مراكز النفاذ', icon: '▣', path: '/contracts/nafath-centers', feature: 'nafath-centers' },
       { name: 'memorandum', label: 'مذكرات التفاهم', icon: '▧', path: '/contracts/memorandum', feature: 'memorandum' },
       { name: 'lifelong-learning', label: 'التعلم مدى الحياة', icon: '◈', path: '/contracts/lifelong-learning', feature: 'lifelong-learning' },
       { name: 'other-agreements', label: 'اتفاقيات أخرى', icon: '◇', path: '/contracts/other-agreements', feature: 'other-agreements' },
       { name: 'educational-content', label: 'المحتوى التعليمي', icon: '▦', path: '/contracts/educational-content', feature: 'educational-content' },
+      { name: 'doctoral-contracts', label: 'عقد الدكتوراه', icon: '▤', path: '/contracts/doctoral-contracts', feature: 'doctoral-contracts' },
     ],
   },
   {
@@ -26,6 +28,7 @@ export const NAV_GROUPS = [
     adminOnly: true,
     items: [
       { name: 'settings', label: 'الإعدادات', icon: '⚙', path: '/settings', adminOnly: true },
+      { name: 'security', label: 'الأمان والجلسات', icon: '◆', path: '/admin/security', feature: 'security-settings', adminOnly: true },
       { name: 'users', label: 'المستخدمون', icon: '♙', path: '/admin/users', feature: 'user-management', adminOnly: true },
       { name: 'roles', label: 'الأدوار والصلاحيات', icon: '◆', path: '/admin/roles', feature: 'access-control', adminOnly: true },
     ],

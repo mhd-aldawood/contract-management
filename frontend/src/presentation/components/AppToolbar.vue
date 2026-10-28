@@ -94,8 +94,8 @@ function goHome() {
 }
 
 async function handleLogout() {
-  await container.authRepository.logout()
-  router.push('/login')
+  try { await container.authRepository.logout() }
+  finally { router.push('/login') }
 }
 </script>
 

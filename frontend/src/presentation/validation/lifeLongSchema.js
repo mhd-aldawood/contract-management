@@ -67,7 +67,7 @@ export const lifeLongSchema = {
   paymentSchedule: [
     custom(
       (rows, f) =>
-        f.paymentMethod !== 'table' || (Array.isArray(rows) && rows.length > 0),
+        f.paymentMethod !== 'table' || (Array.isArray(f.costTable) && f.costTable.length > 0) || (Array.isArray(rows) && rows.length > 0),
       'يجب إضافة صف دفع واحد على الأقل'
     ),
   ],

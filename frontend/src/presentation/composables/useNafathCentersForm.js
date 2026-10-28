@@ -1,3 +1,4 @@
+import { validCostTable } from '@/presentation/utils/agreementCosts'
 // src/presentation/composables/useNafathCentersForm.js
 import { reactive, ref, computed } from 'vue';
 import { NafathCenter } from '@/domain/entities/NafathCenter';
@@ -34,7 +35,7 @@ export function useNafathCentersForm(type = 'nafath-center') {
   const hasPaymentErrors = computed(() =>
     paymentErrors.value.some((row) => Object.keys(row).length > 0)
   )
-  const isFormValid = computed(() => isValid.value && !hasPaymentErrors.value)
+  const isFormValid = computed(() => isValid.value && !hasPaymentErrors.value && validCostTable(form))
 
   /* ---------- mutation helpers ---------- */
     function reset() {

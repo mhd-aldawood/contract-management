@@ -38,7 +38,9 @@ try {
       const request = route.request()
       const pathname = new URL(request.url()).pathname
       let data = []
-      if (pathname.endsWith('/auth/me/')) data = admin
+      if (pathname.endsWith('/auth/csrf/')) data = { csrfToken: 'mock-csrf' }
+      else if (pathname.endsWith('/auth/token/refresh/')) data = { user: admin, token: 'isolated-layout-test', csrfToken: 'mock-csrf' }
+      else if (pathname.endsWith('/auth/me/')) data = admin
       else if (pathname.endsWith('/auth/access-control/')) data = matrix
       else if (pathname.endsWith('/auth/users/')) data = [{ id: 2, username: 'sample-user', role: matrix.roles[1], isActive: true }]
       else if (request.method() === 'GET') data = [record]
@@ -83,14 +85,14 @@ try {
       assert.equal(await dialog.locator('.base-modal__footer').getByRole('button', { name: 'حفظ الاتفاقية', exact: true }).count(), 1)
       if (feature === 'nafath-centers') {
         await dialog.getByLabel('طريقة الدفع', { exact: false }).selectOption('table')
-        await dialog.getByRole('button', { name: 'إضافة دفعة' }).click()
-        await dialog.getByRole('button', { name: 'إضافة دفعة' }).click()
+        await dialog.getByRole('button', { name: 'إضافة صف' }).click()
+        await dialog.getByRole('button', { name: 'إضافة صف' }).click()
         await assertLayout('payment schedule', true)
-        await dialog.getByRole('button', { name: 'حذف الدفعة 2', exact: true }).click()
+        await dialog.getByRole('button', { name: 'حذف صف التكلفة 2', exact: true }).click()
         assert.equal(await dialog.locator('.payment-row').count(), 1)
-        await dialog.getByLabel('اسم الدفعة', { exact: true }).fill('الدفعة الأولى')
-        await dialog.getByLabel('المبلغ', { exact: true }).fill('100')
-        await dialog.getByLabel('تاريخ الاستحقاق', { exact: true }).fill('2026-11-01')
+        await dialog.getByLabel('عدد السنوات', { exact: true }).fill('أول 5 سنوات')
+        await dialog.getByLabel('النسبة', { exact: true }).fill('40')
+        await dialog.getByLabel('تفاصيل', { exact: true }).fill('تفاصيل التكلفة')
         if (output && [1440, 390].includes(viewport.width)) {
           await fs.mkdir(output, { recursive: true })
           await page.screenshot({ path: path.join(output, `agreement-${viewport.width}.png`) })

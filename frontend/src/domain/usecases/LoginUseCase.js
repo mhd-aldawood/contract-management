@@ -3,10 +3,10 @@ export default class LoginUseCase {
     this.authRepository = authRepository
   }
 
-  async execute({username, password}) {
+  async execute({username, password, rememberMe = false}) {
     if (!username || !password) {
       throw new Error('Username and password required')
     }
-    return await this.authRepository.login({username, password})
+    return await this.authRepository.login({username, password, rememberMe})
   }
 }

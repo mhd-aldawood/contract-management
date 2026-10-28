@@ -1,3 +1,4 @@
+import { getAccessToken } from '@/core/api/authSession'
 import { createLogger } from "@/core/logger";
 import { API_URLS } from "@/core/config/apiUrls";
 import { toApiPayload } from "../mappers/NafathCenterMapper";
@@ -27,7 +28,7 @@ export default class NafathCenterRemoteDataSource {
     for (const [key, value] of Object.entries(payload)) {
       if (key === "file" || key === "paymentSchedule" || key === "id") continue;
       if (value === null || value === undefined) continue;
-      fd.append(key, typeof value === "boolean" ? String(value) : value);
+      fd.append(key, key === "costTable" ? JSON.stringify(value) : typeof value === "boolean" ? String(value) : value);
     }
 
     if (Array.isArray(payload.paymentSchedule)) {
@@ -41,7 +42,7 @@ export default class NafathCenterRemoteDataSource {
       logger.debug("No File on agreement — upload will skip the file");
     }
 
-    const token = localStorage.getItem("access_token");
+    const token = getAccessToken();
 
     const saved = await this._request(API_URLS.nafathCenter.create, {
       method: "POST",

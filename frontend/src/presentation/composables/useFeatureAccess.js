@@ -9,5 +9,6 @@ export function useFeatureAccess(feature) {
     container.authRepository.hasPermission(feature, 'write')
   )
 
-  return { canRead, canWrite }
+  const canDownload = computed(() => container.authRepository.hasPermission(feature, 'download'))
+  return { canRead, canWrite, canDownload }
 }

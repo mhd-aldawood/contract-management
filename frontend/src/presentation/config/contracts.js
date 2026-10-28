@@ -6,4 +6,5 @@ export const CONTRACT_TYPES = [
   { feature: 'lifelong-learning', title: 'اتفاقيات التعلم مدى الحياة', endpoint: API_URLS.lifeLong.list },
   { feature: 'other-agreements', title: 'اتفاقيات أخرى', endpoint: API_URLS.otherAgreement.list },
   { feature: 'educational-content', title: 'اتفاقيات المحتوى التعليمي', endpoint: API_URLS.educationalContents.list },
+  { feature: 'doctoral-contracts', title: 'عقد الدكتوراه', endpoint: API_URLS.doctoralContracts.list },
 ]

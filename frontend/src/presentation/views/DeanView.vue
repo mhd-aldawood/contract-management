@@ -1,4 +1,8 @@
 <script setup>
+import AgreementAttachmentDownload from '@/presentation/components/AgreementAttachmentDownload.vue'
+import { downloadDocument } from '@/core/api/fileDownloads'
+import { getAccessToken } from '@/core/api/authSession'
+
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { API_URLS } from '@/core/config/apiUrls'
@@ -8,8 +12,9 @@ import { formatContractDate } from '@/presentation/utils/contractDates'
 import { useFeatureAccess } from '@/presentation/composables/useFeatureAccess'
 import { useNotifications } from '@/presentation/composables/useNotifications'
 import PageHeader from '@/presentation/components/PageHeader.vue'
+import AgreementOrdersModal from '@/presentation/components/AgreementOrdersModal.vue'
 
-const { canWrite } = useFeatureAccess('dean')
+const { canWrite, canDownload } = useFeatureAccess('dean')
 const route = useRoute()
 const notify = useNotifications()
 const agreements = ref([])
@@ -18,6 +23,8 @@ const error = ref('')
 const query = ref('')
 const kind = ref(CONTRACT_TYPES.some(type => type.feature === route.query.type) ? route.query.type : '')
 const visibility = ref('')
+const financeOrders = ref('')
+const orderSelected = ref(null)
 const page = ref(1)
 const pageSize = 15
 const selectedKey = ref('')
@@ -28,15 +35,16 @@ const reviewPanel = ref(null)
 const savingKey = ref('')
 const downloading = ref(null)
 let detailRequest = 0
-const headers = () => ({ Authorization: `Token ${localStorage.getItem('access_token')}` })
+const headers = () => ({ Authorization: `Token ${getAccessToken()}` })
 const selected = computed(() => agreements.value.find(item => item.key === selectedKey.value))
 const filtered = computed(() => agreements.value.filter(item =>
   (!kind.value || item.feature === kind.value) &&
   (visibility.value === '' || item.isHidden === (visibility.value === 'hidden')) &&
+  (!financeOrders.value || (item.orderCount > 0) === (financeOrders.value === 'with')) &&
   `${item.name} ${item.agreementNumber} ${item.details || ''}`.toLowerCase().includes(query.value.trim().toLowerCase())))
 const pages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize)))
 const rows = computed(() => filtered.value.slice((page.value - 1) * pageSize, page.value * pageSize))
-watch([query, kind, visibility], () => { page.value = 1 })
+watch([query, kind, visibility, financeOrders], () => { page.value = 1 })
 watch(pages, total => { page.value = Math.min(page.value, total) })
 const fields = [
   ['agreementNumber', 'رقم الاتفاقية'], ['name', 'اسم الاتفاقية'], ['companyName', 'الجهة المتعاقدة'],
@@ -122,20 +130,17 @@ async function downloadOrder(order) {
   downloading.value = order.id
   detailError.value = ''
   try {
-    const response = await fetch(API_URLS.dean.download(agreement.feature, agreement.id, order.id), { headers: headers() })
-    if (!response.ok) throw new Error('تعذر تنزيل أمر الصرف. تحقق من الصلاحية ثم حاول مجدداً.')
-    const url = URL.createObjectURL(await response.blob())
-    const link = document.createElement('a')
-    link.href = url
-    link.download = order.fileName
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 0)
+    await downloadDocument({ ...agreement, scope: 'dean', orderId: order.id, fileName: order.fileName })
   } catch (e) { if (selectedKey.value === agreement.key) detailError.value = e.message }
   finally { downloading.value = null }
 }
 
 function dateTime(value) {
   return new Intl.DateTimeFormat('ar-SY-u-ca-gregory', { timeZone: 'Asia/Damascus', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
+}
+function updateOrderCount({ key, count }) {
+  const agreement = agreements.value.find(item => item.key === key)
+  if (agreement) agreement.orderCount = count
 }
 onMounted(async () => {
   await load()
@@ -156,7 +161,8 @@ onBeforeUnmount(() => { detailRequest++ })
         <label class="form-field"><span>البحث</span><input v-model="query" type="search" placeholder="اسم الاتفاقية، الرقم أو التفاصيل" /></label>
         <label class="form-field"><span>نوع الاتفاقية</span><select v-model="kind"><option value="">جميع الأنواع</option><option v-for="type in CONTRACT_TYPES" :key="type.feature" :value="type.feature">{{ type.title }}</option></select></label>
         <label class="form-field"><span>الظهور في التخطيط</span><select v-model="visibility"><option value="">الكل</option><option value="visible">ظاهرة في التخطيط</option><option value="hidden">مخفية عن التخطيط</option></select></label>
-        <button type="button" class="btn--secondary" @click="query = ''; kind = ''; visibility = ''">إلغاء الفلاتر</button>
+        <label class="form-field"><span>أوامر الصرف</span><select v-model="financeOrders"><option value="">الكل</option><option value="with">لديها أوامر صرف</option><option value="without">بدون أوامر صرف</option></select></label>
+        <button type="button" class="btn--secondary" @click="query = ''; kind = ''; visibility = ''; financeOrders = ''">إلغاء الفلاتر</button>
       </div>
       <p class="result-count" aria-live="polite">عدد العقود والاتفاقيات: {{ filtered.length }}</p>
       <div class="table-scroll" :aria-busy="loading"><table class="dean-agreements"><thead><tr><th>اسم العقد / الاتفاقية</th><th>الرقم</th><th>التفاصيل</th><th>أوامر الصرف</th><th>الظهور في التخطيط</th></tr></thead>
@@ -164,7 +170,7 @@ onBeforeUnmount(() => { detailRequest++ })
           <tr v-for="agreement in loading ? [] : rows" :key="agreement.key" class="dean-agreement-row" :class="{ 'is-selected': selectedKey === agreement.key }" :tabindex="savingKey ? -1 : 0" :aria-selected="selectedKey === agreement.key" @click="selectAgreement(agreement)" @keydown.enter.self="selectAgreement(agreement)" @keydown.space.self.prevent="selectAgreement(agreement)">
             <td><strong>{{ agreement.name || '—' }}</strong><small class="dean-meta">{{ agreement.category }}</small></td><td>{{ agreement.agreementNumber || '—' }}</td>
             <td><p class="dean-summary">{{ agreement.details || '—' }}</p><button type="button" class="btn--secondary btn--sm" :disabled="!!savingKey" aria-controls="dean-review" @click.stop="selectAgreement(agreement)">عرض التفاصيل</button></td>
-            <td><button type="button" class="btn--secondary btn--sm" :disabled="!!savingKey" aria-controls="dean-review" @click.stop="selectAgreement(agreement)">أوامر الصرف ({{ agreement.orderCount }})</button></td>
+            <td><button type="button" class="btn--secondary btn--sm" :disabled="!!savingKey || !(agreement.orderCount > 0)" @click.stop="orderSelected = agreement">عرض أوامر الصرف ({{ agreement.orderCount }})</button></td>
             <td @click.stop><label class="dean-visibility"><input type="checkbox" role="switch" :checked="!agreement.isHidden" :disabled="!canWrite || !!savingKey || loading || detailLoading" :aria-label="`إظهار ${agreement.name} في التخطيط`" @change="setPlanningVisibility(agreement, $event.target.checked, $event)" /><span>{{ savingKey === agreement.key ? 'جارٍ الحفظ…' : agreement.isHidden ? 'مخفية عن التخطيط' : 'ظاهرة في التخطيط' }}</span></label></td>
           </tr>
         </tbody>
@@ -189,19 +195,20 @@ onBeforeUnmount(() => { detailRequest++ })
         </dl>
         <section v-for="(row, index) in detail.rows || []" :key="index" class="dean-clause"><h3>{{ row.header || `بند ${index + 1}` }}</h3><p>{{ row.body }}</p></section>
         <div v-if="detail.paymentSchedule?.length" class="table-scroll dean-schedule"><table><thead><tr><th>الدفعة</th><th>المبلغ</th><th>تاريخ الاستحقاق</th></tr></thead><tbody><tr v-for="(row, index) in detail.paymentSchedule" :key="index"><td>{{ row.label }}</td><td>{{ row.amount }}</td><td>{{ formatContractDate(row.dueDate) }}</td></tr></tbody></table></div>
-        <a v-if="detail.fileUrl || detail.file" class="btn btn--secondary" :href="detail.fileUrl || detail.file" target="_blank" rel="noopener">{{ detail.fileName || 'فتح مرفق الاتفاقية' }}</a>
+        <AgreementAttachmentDownload :agreement="{ ...detail, feature: selected.feature }" scope="dean" />
         <div class="panel-heading dean-orders-heading"><h3>أوامر الصرف ({{ detail.orders.length }})</h3><button type="button" class="btn--secondary btn--sm" :disabled="!!savingKey" @click="loadDetail(selected)">تحديث أوامر الصرف</button></div>
         <div class="table-scroll"><table class="dean-orders"><thead><tr><th>أمر الصرف</th><th>الملف</th><th>تاريخ الرفع</th><th>آخر تحديث</th><th>بواسطة</th><th>الإجراءات</th></tr></thead><tbody>
           <tr v-if="!detail.orders.length"><td colspan="6" class="empty-state">لم تُرفع أوامر صرف لهذه الاتفاقية بعد.</td></tr>
-          <tr v-for="order in detail.orders" :key="order.id"><td><strong>{{ order.title || order.fileName }}</strong><p v-if="order.notes" class="dean-order-notes">{{ order.notes }}</p></td><td class="dean-file-name">{{ order.fileName }}</td><td>{{ dateTime(order.createdAt) }}</td><td>{{ dateTime(order.updatedAt) }}</td><td>{{ order.updatedBy || order.uploadedBy }}</td><td><button type="button" class="btn--secondary btn--sm" :disabled="downloading !== null" @click="downloadOrder(order)">{{ downloading === order.id ? 'جارٍ التنزيل…' : 'تنزيل' }}</button></td></tr>
+          <tr v-for="order in detail.orders" :key="order.id"><td><strong>{{ order.title || order.fileName }}</strong><p v-if="order.notes" class="dean-order-notes">{{ order.notes }}</p></td><td class="dean-file-name">{{ order.fileName }}</td><td>{{ dateTime(order.createdAt) }}</td><td>{{ dateTime(order.updatedAt) }}</td><td>{{ order.updatedBy || order.uploadedBy }}</td><td><button type="button" class="btn--secondary btn--sm" :disabled="downloading !== null || !canDownload" @click="downloadOrder(order)">{{ downloading === order.id ? 'جارٍ التنزيل…' : 'تنزيل' }}</button></td></tr>
         </tbody></table></div>
       </template>
     </section>
+    <AgreementOrdersModal :agreement="orderSelected" scope="dean" @close="orderSelected = null" @loaded="updateOrderCount" />
   </main>
 </template>
 
 <style scoped>
-.dean-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 1rem; margin-block-end: 1.25rem; }
+.dean-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: end; gap: 1rem; margin-block-end: 1.25rem; }
 .dean-agreements { min-width: 58rem; }
 .dean-agreement-row { cursor: pointer; }
 .dean-agreement-row:focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: -2px; }

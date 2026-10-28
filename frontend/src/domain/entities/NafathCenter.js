@@ -13,6 +13,7 @@ export class NafathCenter {
     paymentMethod = "", // '' | 'text' | 'table'
     paymentText = "",
     paymentSchedule = [],
+    costTable = [],
     status = "",
     disbursement = "",
     budgetType = "current",
@@ -32,6 +33,7 @@ export class NafathCenter {
     this.paymentMethod = paymentMethod;
     this.paymentText = paymentText;
     this.paymentSchedule = paymentSchedule;
+    this.costTable = costTable
     this.status = status;
     this.disbursement = disbursement;
     this.budgetType = budgetType;
@@ -55,6 +57,7 @@ export class NafathCenter {
     paymentMethod: '',
     paymentText: '',
     paymentSchedule: [],
+      costTable: [],
     quarterlyDue: 0,
     status: '',
     disbursement: '',

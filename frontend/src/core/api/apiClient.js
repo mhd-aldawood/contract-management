@@ -3,6 +3,7 @@ import {
   emptySuccessResponse,
   mapUnifiedApiResponse,
 } from './unifiedApiResponse'
+import { authenticatedFetch } from './authSession'
 
 export class ApiError extends Error {
   constructor(message, { code = 'request.failed', errors = null, status = 0, response = null } = {}) {
@@ -23,7 +24,7 @@ function getLanguage() {
 
 export async function apiRequest(url, options = {}) {
   const isFormData = options.body instanceof FormData
-  const response = await fetch(url, {
+  const response = await authenticatedFetch(url, {
     ...options,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
